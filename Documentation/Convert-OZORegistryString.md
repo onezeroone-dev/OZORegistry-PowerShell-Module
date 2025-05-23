@@ -1,25 +1,28 @@
-# Get-OZOFileToBase64
-This function is part of the [OZOFiles PowerShell Module](../README.md).
+# Convert-OZORegistryString
+This function is part of the [OZORegistry PowerShell Module](../README.md).
 
 ## Description
-Returns _True_ if the Path is locked or _False_ if the path is not locked, does not exist, is not accessible, or is a directory.
+Converts a registry string from one format to another, e.g., _HKCU:\SOFTWARE\Google\Chrome_ to _HKEY_CURRENT_USER\SOFTWARE\Google\Chrome_. If the input string is invalid, it is returned unmodified.
 
 ## Syntax
 ```
-Get-OZOFileIsLocked
-    -Path <String>
+Convert-OZORegistryString
+    -RegistryPath <String>
 ```
 
 ## Parameters
 |Parameter|Description|
 |---------|-----------|
-|`Path`|The path of the file to inspect.|
+|`RegistryPath`|The registry string to convert. Accepts pipeline input.|
 
 ## Examples
+### Example 1
 ```powershell
-Get-OZOFileIsLocked -Path "C:\Temp\test.txt"
-False
+Convert-OZORegistryString -Path "HKEY_CURRENT_USER\SOFTWARE\Google\Chrome"
+HKCU:\SOFTWARE\Google\Chrome
 ```
-
-## Outputs
-`System.Boolean`
+### Example 2
+```powershell
+Convert-OZORegistryString -Path "HKCU:\SOFTWARE\Google\Chrome"
+HKEY_CURRENT_USER\SOFTWARE\Google\Chrome
+```
