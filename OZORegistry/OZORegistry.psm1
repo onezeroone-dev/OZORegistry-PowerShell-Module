@@ -1,4 +1,18 @@
-Function Convert-OZORegistryString {
+# CLASSES
+Class RegistryItem {
+    # PROPERTIES: Booleans, Strings
+    [Boolean] $Exists = $true
+    [String]  $Key    = $null
+    [String]  $Value  = $null
+    [String]  $Type   = $null
+    # METHODS: Constructor method
+    RegistryKeyValueData($Key,$Value) {
+
+    }
+}
+
+# FUNCTIONS
+Function Convert-OZORegistryPath {
     <#
         .SYNOPSIS
         See description.
@@ -7,13 +21,13 @@ Function Convert-OZORegistryString {
         .PARAMETER RegistryPath
         The registry string to convert. Accepts pipeline input.
         .EXAMPLE
-        Convert-OZORegistryString -Path "HKEY_CURRENT_USER\SOFTWARE\Google\Chrome"
+        Convert-OZORegistryPath -Path "HKEY_CURRENT_USER\SOFTWARE\Google\Chrome"
         HKCU:\SOFTWARE\Google\Chrome
         .EXAMPLE
-        Convert-OZORegistryString -Path "HKCU:\SOFTWARE\Google\Chrome"
+        Convert-OZORegistryPath -Path "HKCU:\SOFTWARE\Google\Chrome"
         HKEY_CURRENT_USER\SOFTWARE\Google\Chrome
         .LINK
-        https://github.com/onezeroone-dev/OZORegistry-PowerShell-Module/blob/main/Documentation/Convert-OZORegistryString.md
+        https://github.com/onezeroone-dev/OZORegistry-PowerShell-Module/blob/main/Documentation/Convert-OZORegistryPath.md
     #>
     # Parameters
     [CmdletBinding()] Param (
@@ -31,40 +45,122 @@ Function Convert-OZORegistryString {
         {$_ -Like "HKEY_LOCAL_MACHINE\*" } { return $RegistryPath.Replace("HKEY_LOCAL_MACHINE","HKLM:")  }
         {$_ -Like "HKEY_USERS\*"         } { return $RegistryPath.Replace("HKEY_USERS","HKU:")           }
         {$_ -Like "HKEY_CURRENT_CONFIG\*"} { return $RegistryPath.Replace("HKEY_CURRENT_CONFIG","HKCC:") }
+        default                            { return $RegistryPath                                        }
     }
 }
 
-Function Read-OZORegistryValue {
+Function Read-OZORegistryKeyValueData {
     <#
         .SYNOPSIS
+        See description.
         .DESCRIPTION
-        .PARAMETER
+        Returns a registry key value data. Returns "Invalid path" if the path is not valid and "Not found" if the path does not exist. 
+        .PARAMETER Key
+        The registry key.
+        .PARAMETER Value
+        The key value.
         .EXAMPLE
+        Read-OZORegistryKeyValueData -Key "Computer\HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion" -Value "ProgramFilesDir"
+        C:\Program Files
         .LINK
-        https://github.com/onezeroone-dev/OZORegistry-PowerShell-Module/blob/main/Documentation/Read-OZORegistryValue.md
+        https://github.com/onezeroone-dev/OZORegistry-PowerShell-Module/blob/main/Documentation/Read-OZORegistryKeyValueData.md
+        .NOTES
+        This function expectes registry keys in the "HKEY_LOCAL_MACHINE\..." format. If your path is in the "HKLM:\..." format, reformat it with Convert-OZORegistryPath.
     #>
+    # Parameters
+    [CmdletBinding()] Param (
+        [Parameter(Mandatory=$true,HelpMessage="The registry key")][String]$Key,
+        [Parameter(Mandatory=$true,HelpMessage="The key value")][String]$Value
+    )
+    # Attempt to get the data
+    $data = [Microsoft.Win32.Registry]::GetValue($Key,$Value,"Not found")
+    # Determine if the data is null
+    If ($null -eq $data) {
+        # Data is null
+        $data = "Invalid path"
+    }
+    # Return the data
+    return $data
 }
 
-Function Read-OZORegistryValueType {
+Function Read-OZORegistryKeyValueType {
     <#
         .SYNOPSIS
+        See description.
         .DESCRIPTION
-        .PARAMETER
+        Returns the data type for a registry key value. Returns "Invalid path" if the path is not valid.
+        .PARAMETER Key
+        The registry key.
+        .PARAMETER Value
+        The key value.
         .EXAMPLE
+        Read-OZORegistryKeyValueType -Key "Computer\HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion" -Value "ProgramFilesDir"
+        String
         .LINK
-        https://github.com/onezeroone-dev/OZORegistry-PowerShell-Module/blob/main/Documentation/Read-OZORegistryValueType.md
+        https://github.com/onezeroone-dev/OZORegistry-PowerShell-Module/blob/main/Documentation/Read-OZORegistryKeyValueType.md
+        .NOTES
+        This function expectes registry keys in the "HKEY_LOCAL_MACHINE\..." format. If your path is in the "HKLM:\..." format, reformat it with Convert-OZORegistryPath.
     #>
+    # Parameters
+    [CmdletBinding()] Param (
+        [Parameter(Mandatory=$true,HelpMessage="The registry key")][String]$Key,
+        [Parameter(Mandatory=$true,HelpMessage="The key value")][String]$Value
+    )
+    # Try to get the value type
+    Try {
+        $type = (Get-Item -Path ("Microsoft.PowerShell.Core\Registry::" + $Key) -ErrorAction Stop).GetValueKind($Value)
+    } Catch {
+        $type = "Invalid path"
+    }
+    # Return the type
+    return $type
 }
 
-Function Write-OZORegistryValue {
+Function Write-OZORegistryKeyValueData {
     <#
         .SYNOPSIS
+        See description.
         .DESCRIPTION
-        .PARAMETER
+        Writes data to a registry key value. If the key value does not exist, it will be created. If it does exist, it will be updated. Returns True on success and False on failure.
+        .PARAMETER Key
+        The registry key.
+        .PARAMETER Value
+        The key value.
+        .PARAMETER Data
+        The value data.
+        .PARAMETER Type
+        The data type. Valid types are "Binary", "Dword", "ExpandString", "MultString", "None", "Qword", "String", and "Unknown". Defaults to "String".
         .EXAMPLE
+        Write-OZORegistryKeyValueData -Key "HKEY_LOCAL_MACHINE\SOFTWARE\One Zero One" -Value "Acronym" -Data "OZO" -Type "String"
         .LINK
-        https://github.com/onezeroone-dev/OZORegistry-PowerShell-Module/blob/main/Documentation/Write-OZORegistryValue.md
+        https://github.com/onezeroone-dev/OZORegistry-PowerShell-Module/blob/main/Documentation/Write-OZORegistryKeyValueData.md
+        .NOTES
+        Requires Administrator privileges. This function expectes registry keys in the "HKEY_LOCAL_MACHINE\..." format. If your path is in the "HKLM:\..." format, reformat it with Convert-OZORegistryPath.
     #>
+    # Parameters
+    [CmdletBinding()] Param (
+        [Parameter(Mandatory=$true,HelpMessage="The registry key")][String]$Key,
+        [Parameter(Mandatory=$true,HelpMessage="The key value")][String]$Value,
+        [Parameter(Mandatory=$true,HelpMessage="The value data")][String]$Data,
+        [Parameter(Mandatory=$false,HelpMessage="The data type")][ValidateSet("Binary","Dword","ExpandString","MultString","None","Qword","String","Unknown")][String]$Type = "String"
+    )
+    # Determine if the operator is an administrator
+    If (Test-OZOLocalAdministrator -eq $true) {
+        # Operator is an Administrator; try to set the registry key value
+        Try {
+            [Microsoft.Win32.Registry]::SetValue($Key,$Value,$Data,[Microsoft.Win32.RegistryValueKind]::$Type)
+            # Success
+            return $true
+        } Catch {
+            # Failure
+            Write-OZOProvider -Message ("Error writing registry value data. Error message is: " + $_) -Level "Error"
+            return $false
+        }
+    } Else {
+        # Operator is not an Administrator
+        Write-OZOProvider -Message "The Write-OZORegistryValue function requires Administrator privileges." -Level "Error"
+        return $false
+    }
 }
 
-Export-ModuleMember -Function Convert-OZORegistryString,Read-OZORegistryValue,Read-OZORegistryValueType,Write-OZORegistryValue
+Export-ModuleMember -Function Convert-OZORegistryString,Read-OZORegistryKeyValueData,Read-OZORegistryKeyValueType,Write-OZORegistryKeyValueData

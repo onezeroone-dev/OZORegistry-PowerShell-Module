@@ -15,8 +15,13 @@ Import-Module OZORegistry
 ```
 
 ## Functions
+- [Convert-OZORegistryPath](Documentation/Convert-OZORegistryPath.md)
+- [Read-OZORegistryKeyValueData](Documentation/Read-OZORegistryKeyValueData.md)
+- [Read-OZORegistryKeyValueType](Documentation/Read-OZORegistryKeyValueType.md)
+- [Write-OZORegistryKeyValueData](Documentation/Write-OZORegistryKeyValueData.md)
 
-- [Convert-OZORegistryString](Documentation/Convert-OZORegistryString.md)
-- [Read-OZORegistryValue](Documentation/Read-OZORegistryValue.md)
-- [Read-OZORegistryValueType](Documentation/Read-OZORegistryValueType.md)
-- [Write-OZORegistryValue](Documentation/Write-OZORegistryValue.md)
+## Classes
+- [RegistryItem](Documentation/RegistryItem.md)
+
+## Acknowledgements
+Special thanks to my employer, [Sonic Healthcare USA](https://sonichealthcareusa.com), who supports the growth of my PowerShell skillset and enables me to contribute portions of my work product to the PowerShell community.

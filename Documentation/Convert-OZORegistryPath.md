@@ -1,4 +1,4 @@
-# Convert-OZORegistryString
+# Convert-OZORegistryPath
 This function is part of the [OZORegistry PowerShell Module](../README.md).
 
 ## Description
@@ -6,7 +6,7 @@ Converts a registry string from one format to another, e.g., _HKCU:\SOFTWARE\Goo
 
 ## Syntax
 ```
-Convert-OZORegistryString
+Convert-OZORegistryPath
     -RegistryPath <String>
 ```
 
@@ -18,11 +18,11 @@ Convert-OZORegistryString
 ## Examples
 ### Example 1
 ```powershell
-Convert-OZORegistryString -Path "HKEY_CURRENT_USER\SOFTWARE\Google\Chrome"
+Convert-OZORegistryPath -Path "HKEY_CURRENT_USER\SOFTWARE\Google\Chrome"
 HKCU:\SOFTWARE\Google\Chrome
 ```
 ### Example 2
 ```powershell
-Convert-OZORegistryString -Path "HKCU:\SOFTWARE\Google\Chrome"
+Convert-OZORegistryPath -Path "HKCU:\SOFTWARE\Google\Chrome"
 HKEY_CURRENT_USER\SOFTWARE\Google\Chrome
 ```

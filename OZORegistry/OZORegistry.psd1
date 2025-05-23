@@ -40,7 +40,12 @@
         @{
             ModuleName    = 'OZO'
             GUID          = 'c3ef00b7-bd75-482f-bbe1-9291799943b9'
-            ModuleVersion = "1.6.0"
+            ModuleVersion = '1.6.0'
+        },
+        @{
+            ModuleName    = 'OZOLogger'
+            GUID          = 'bfac40de-f4c1-4607-b0e6-ebd1ce8ca9a3'
+            ModuleVersion = '1.0.2'
         }
     )
     # Assemblies that must be loaded prior to importing this module
@@ -56,9 +61,9 @@
     # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
     FunctionsToExport = @(
         "Convert-OZORegistryString",
-        "Read-OZORegistryValue",
-        "Read-OZORegistryValueType",
-        "Write-OZORegistryValue"
+        "Read-OZORegistryKeyValueData",
+        "Read-OZORegistryKeyValueType",
+        "Write-OZORegistryKeyValueData"
     )
     # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
     CmdletsToExport = @()
