@@ -1,13 +1,107 @@
 # CLASSES
-Class RegistryItem {
+Class OZORegistryKeyValue {
     # PROPERTIES: Booleans, Strings
-    [Boolean] $Exists = $true
-    [String]  $Key    = $null
-    [String]  $Value  = $null
-    [String]  $Type   = $null
+    [Boolean] $keyExists   = $true
+    [Boolean] $valueExists = $true
+    [String]  $Key         = $null
+    [String]  $Value       = $null
+    [String]  $Type        = $null
+    # PROPERTIES: PSCustomObjects
+    [PSCustomObject] $keyObject = $null
     # METHODS: Constructor method
-    RegistryKeyValueData($Key,$Value) {
-
+    OZORegistryKeyValue([String]$Key,[String]$Value) {
+        # Set properties
+        $this.Value = $Value
+        # Determine if key is not in the correct format
+        If ($Key -Like "*:\*") {
+            # Key is not in the correct format
+            $this.Key = ("Registry::" + (Convert-OZORegistryPath -Path $Key))
+        } Else {
+            # Key is in the correct format
+            $this.Key = ("Registry::" + $Key)
+        }
+        # Call GetKey to get the key and set keyExists
+        If ($this.GetKey() -eq $true) {
+            # Key value exists and validates; call GetValue to validate the value
+            If ($this.GetValue() -eq $true) {
+                # Value exists; get the value type
+                $this.GetType()
+                # Get the data
+                $this.GetData()
+            }
+        } Else {
+            # Key value does not exist
+            $this.Exists = $false
+        }
+    }
+    # METHODS: Validate Key value method
+    Hidden [Boolean] GetKey() {
+        # Control variable
+        [Boolean] $Return = $true
+        # Try to get the key
+        Try {
+            $this.keyObject = (Get-Item -Path $this.Key -ErrorAction Stop)
+            # Success
+        } Catch {
+            # Failure
+            $Return = $false
+        }
+        # Return
+        return $Return
+    }
+    # METHODS: Get value method
+    Hidden [Boolean] GetValue() {
+        # Control variable
+        [Boolean] $Return = $true
+        # Determine if key does not contain value
+        If ($this.keyObject.Properties -NotContains $this.Value) {
+            # Key does not contain value
+            $Return = $false
+        }
+        # Return
+        return $Return
+    }
+    # METHODS: Get type method
+    Hidden [Void] GetType() {
+        # Set properties
+        $this.Type = $this.keyObject.GetValueKind($this.Value)
+        # Add the Data property with the correct type
+        Add-Member -InputObject $this -MemberType NoteProperty -Name "Data" -TypeName $this.Type -Value $null -Force
+        
+    }
+    # METHODS: Get data method
+    Hidden [Void] GetData() {
+        # Populate the Data property with the value data
+        $this.Data = $this.keyObject.GetValue($this.Value)
+    }
+    # "Binary", "Dword", "ExpandString", "MultString", "Qword", "String"
+    # METHODS: Write key value [byte] data
+    [Boolean] WriteKeyValueData([Byte]$Data) {
+        # Control variable
+        [Boolean] $Return = $true
+        # Set properties
+        $this.Type = "Binary"
+        [Microsoft.Win32.Registry]::SetValue($this.Key,$this.Value,$Data,[Microsoft.Win32.RegistryValueKind]::$this.Type)
+        # Return
+        return $Return
+    }
+    # METHODS: Write key value [string] data
+    [Boolean] WriteKeyValueData([String]$Data) {
+        # Control variable
+        [Boolean] $Return = $true
+        # Set properties
+        $this.Type = "String"
+        # Return
+        return $Return
+    }
+    # METHODS: Write key value [string] data
+    [Boolean] WriteKeyValueData([String[]]$Data) {
+        # Control variable
+        [Boolean] $Return = $true
+        # Set properties
+        $this.Type = "MultString"
+        # Return
+        return $Return
     }
 }
 
@@ -49,7 +143,29 @@ Function Convert-OZORegistryPath {
     }
 }
 
-Function Read-OZORegistryKeyValueData {
+Function Get-OZORegistryItem {
+    <#
+        .SYNOPSIS
+        See description.
+        .DESCRIPTION
+        Returns an OZODirectorySummary object.
+        .PARAMETER LongLength
+        Number of characters in a long path. Defaults to 256.
+        .PARAMETER Path
+        The path to inspect.
+        .EXAMPLE
+        $ozoDirectorySummary = (Get-OZODirectorySummary -Path "C:\Temp")
+        .LINK
+        https://github.com/onezeroone-dev/OZOFiles-PowerShell-Module/blob/main/Documentation/Get-OZODirectorySummary.md
+    #>
+    [CmdLetBinding()] Param (
+        [Parameter(Mandatory=$false,HelpMessage="Number of characters in a long path")][Int32]$LongLength = 256,
+        [Parameter(Mandatory=$true,HelpMessage="Path to inspect")][String]$Path
+    )
+    return [OZODirectorySummary]::new($LongLength,$Path)
+}
+
+Function Read-OZORegistryItem {
     <#
         .SYNOPSIS
         See description.
