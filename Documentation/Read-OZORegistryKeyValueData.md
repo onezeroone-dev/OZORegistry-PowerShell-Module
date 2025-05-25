@@ -2,7 +2,7 @@
 This function is part of the [OZORegistry PowerShell Module](../README.md).
 
 ## Description
-Returns a registry key value data. Returns "Invalid path" if the path is not valid and "Not found" if the path does not exist. 
+Returns the data for an existing key value using the correspoinding data type. Returns "Invalid path" if the path is not valid, "Not found" if the path does not exist, "Could not read values" if the key values could not be read, and "Unhandled data type" if the data cannot be returned.
 
 ## Syntax
 ```

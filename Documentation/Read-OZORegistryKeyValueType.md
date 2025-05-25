@@ -2,7 +2,7 @@
 This function is part of the [OZORegistry PowerShell Module](../README.md).
 
 ## Description
-
+Returns the type for an existing key value. Returns "Invalid path" if the path is not valid, "Not found" if the path does not exist, and "Could not read values" if the key values could not be read.
 
 ## Syntax
 ```

@@ -1,107 +1,253 @@
 # CLASSES
-Class OZORegistryKeyValue {
+Class OZORegistryKey {
     # PROPERTIES: Booleans, Strings
-    [Boolean] $keyExists   = $true
-    [Boolean] $valueExists = $true
-    [String]  $Key         = $null
-    [String]  $Value       = $null
-    [String]  $Type        = $null
+    [Boolean] $keyExists  = $true
+    [Boolean] $keyValid   = $true
+    [Boolean] $valuesRead = $true
+    [String]  $keyPath    = $null
     # PROPERTIES: PSCustomObjects
-    [PSCustomObject] $keyObject = $null
+    [PSCustomObject] $Key    = $null
+    [PSCustomObject] $Logger = $null
+    # PROPERTIES: PSCustomObject Lists
+    [System.Collections.Generic.List[PSCustomObject]] $Values = @()
     # METHODS: Constructor method
-    OZORegistryKeyValue([String]$Key,[String]$Value) {
-        # Set properties
-        $this.Value = $Value
-        # Determine if key is not in the correct format
-        If ($Key -Like "*:\*") {
-            # Key is not in the correct format
-            $this.Key = ("Registry::" + (Convert-OZORegistryPath -Path $Key))
-        } Else {
-            # Key is in the correct format
-            $this.Key = ("Registry::" + $Key)
-        }
-        # Call GetKey to get the key and set keyExists
-        If ($this.GetKey() -eq $true) {
-            # Key value exists and validates; call GetValue to validate the value
-            If ($this.GetValue() -eq $true) {
-                # Value exists; get the value type
-                $this.GetType()
-                # Get the data
-                $this.GetData()
+    OZORegistryKey([String]$KeyPath) {
+        # Create a logger
+        $this.Logger = (New-OZOLogger)
+        # Call ValidateKey to determine if KeyPath format is valid [and populate this.KeyPath]
+        If ($this.ValidateKeyPath($KeyPath) -eq $true) {
+            # Key is valid
+            $this.Logger.Write(("Using key path " + $this.keyPath + "."),"Information")
+            # Call ReadKey to set keyExists [and populate registryKey]
+            If ($this.ReadKey() -eq $true) {
+                # Retrieved key; call ReadKeyValues to populate registryKeyValues
+                If ($this.ReadKeyValues() -eq $true) {
+                    # Able to read all key values; display for user-interactive sessions
+                    $this.Logger.Write(($this.keyPath + " exists and all values read."),"Information")
+                    # Display values for user-interactive sessions
+                    $this.DisplayKeyValues()                    
+                } Else {
+                    # No values found or unable to read all key values; log
+                    $this.Logger.Write(($this.keyPath + " contains no values or some values could not be read."),"Warning")
+                    $this.valuesRead = $false
+                }
+            } Else {
+                # Unable to retrieve key; log
+                $this.Logger.Write(("Key `"" + $KeyPath + "`" did could not be read."),"Error")
+                $this.keyExists  = $false
+                $this.valuesRead = $false
             }
         } Else {
-            # Key value does not exist
-            $this.Exists = $false
+            # Key format is not valid; log
+            $this.Logger.Write(("Key `"" + $KeyPath + "`" is not a valid path."),"Error")
+            $this.keyExists  = $false
+            $this.keyValid   = $false
+            $this.valuesRead = $false
         }
     }
-    # METHODS: Validate Key value method
-    Hidden [Boolean] GetKey() {
+    # METHODS: Validate key method
+    Hidden [Boolean] ValidateKeyPath([String]$KeyPath) {
         # Control variable
         [Boolean] $Return = $true
-        # Try to get the key
-        Try {
-            $this.keyObject = (Get-Item -Path $this.Key -ErrorAction Stop)
-            # Success
-        } Catch {
-            # Failure
+        # Local variables
+        [String] $keyPathStart = $null
+        [Array]  $validShortStrings = @("HKCR:","HKCU:","HKLM:","HKU:","HKCC:")
+        [Array]  $validLongStrings  = @("HKEY_CLASSES_ROOT","HKEY_CURRENT_USER","HKEY_LOCAL_MACHINE","HKEY_USERS","HKEY_CURRENT_CONFIG")
+        # Determine if KeyPath contains a \ character
+        If ($KeyPath -Like "*\*") {
+            # KeyPath contains a \ character; split the string on \ and store the first string as keyPathStart
+            $keyPathStart = ($KeyPath -Split "\\" )[0]
+            # Determine if the first string is found in validPaths
+            If (($validShortStrings + $validLongStrings) -Contains $keyPathStart) {
+                # First string appears in valid*Strings lists; determine if key is in validShortStrings
+                If ($validShortStrings -Contains $keyPathStart) {
+                    # Key is in the short format; convert to long format and set this.keyPath
+                    $this.keyPath = ("Registry::" + (Convert-OZORegistryPath -RegistryPath $KeyPath))
+                } Else {
+                    # Key is in the long format; set this.keyPath
+                    $this.keyPath = ("Registry::" + $KeyPath)
+                }
+            } Else {
+                # First string does not appear in valid*Strings
+                $Return = $false
+            }
+        } Else {
+            # Path does not contain a \ character
+            $Return = $false
+        }
+        # return
+        return $Return
+    }
+    # METHODS: Read key method
+    Hidden [Boolean] ReadKey() {
+        # Control variable
+        [Boolean] $Return = $true
+         # Determine that Key is valid and set
+        If ($this.keyValid -eq $true -And $null -ne $this.keyPath) {
+            # Key is valid and set; try to get the key
+            Try {
+                $this.Key = (Get-Item -Path $this.keyPath -ErrorAction Stop)
+                # Success
+            } Catch {
+                # Failure
+                $Return = $false
+            }
+        } Else {
             $Return = $false
         }
         # Return
         return $Return
     }
-    # METHODS: Get value method
-    Hidden [Boolean] GetValue() {
+    # METHODS: Read key values method
+    Hidden [Boolean] ReadKeyValues() {
         # Control variable
         [Boolean] $Return = $true
-        # Determine if key does not contain value
-        If ($this.keyObject.Properties -NotContains $this.Value) {
-            # Key does not contain value
-            $Return = $false
+        # Determine that registryKey is populated
+        If ($null -ne $this.Key) {
+            # Registry key is populated; determine if it has no properties
+            If ($this.Key.Property.Count -eq 0) {
+                # There are no properties; nothing to do
+                $Return = $false
+            # Otherwise determine if the Property count is 1 and it's Value is (default) 
+            } ElseIf ($this.Key.ValueCount -eq 1 -And $this.Key.Property -Contains "(default)") {
+                # Key contains only one property and it is the (default) property; nothing to do
+                $Return = $false
+            } Else {
+                # Key contains one or more values that are not (default); iterate through the values
+                ForEach ($keyProperty in $this.Key.Property) {
+                    $this.Values.Add(([OZORegistryKeyValue]::new($keyProperty,$this.Key.GetValue($keyProperty,$null,"DoNotExpandEnvironmentNames"))))
+                }
+                # Determine if the count of registry does not match the number of objects in the Values list
+                If ($this.Key.ValueCount -ne $this.Values.Count) {
+                    # The counts do not match (some value could not be represented with a RegistryKeyValue object); clear Values
+                    $this.Values = @()
+                    $Return = $false
+                }
+            }
         }
         # Return
         return $Return
     }
-    # METHODS: Get type method
-    Hidden [Void] GetType() {
+    # METHODS: Display key values
+    [Void] DisplayKeyValues() {
+        # Determine if session is user-interactive
+        If (Get-OZOUserInteractive -eq $true) {
+            # Session is user-interactive
+            $this.Values | Select-Object -Property Value,Type,Data | Format-Table | Out-Host
+        }
+    }
+    # METHODS: Add key value method
+    [Void] AddKeyValue([String]$Value,$Data) {
+        # Determine if value already exists in key
+        If ($this.Values.Value -Contains $Value) {
+            # Values already contains Value
+            $this.Logger.Write(("Key already contains a " + $Value + " value; skipping."),"Warning")
+        } Else {
+            # Values does not already contain this Value; add to list
+            $this.Values.Add(([OZORegistryKeyValue]::new($Value,$Data)))
+        }
+        # Display key values for user-interactive sessions
+        $this.DisplayKeyValues()
+    }
+    # METHODS: Add key value method
+    [Void] RemoveKeyValue([String]$Value) {
+        # Determine if value exists in key
+        If ($this.Values.Value -Contains $Value) {
+            # Values contains Value; remove it
+            $this.Values.Remove(($this.Values | Where-Object {$_.Value -eq $Value}))
+        } Else {
+            # Values does not contain Value; nothing to do
+            $this.Logger.Write(("Key does not contain a " + $Value + " value; skipping."),"Warning")
+        }
+        # Display key values for user-interactive sessions
+        $this.DisplayKeyValues()
+    }
+    # METHODS: Add key value method
+    [Void] UpdateKeyValue([String]$Value,$Data) {
+        # Determine if this value exists in Values
+        If ($this.Values.Value -Contains $Value) {
+            # Value exists; determine if type of value matches Data type
+            If (($this.Values | Where-Object {$_.Value -eq $Value}).Data.GetType() -eq $Data.GetType()) {
+                # Data types match; update with new Data
+                ($this.Values | Where-Object {$_.Value -eq $Value}).Data = $Data
+            } Else {
+                $this.Logger.Write("Data type does not match; value will not be updated.","Warning")
+            }
+        } Else {
+            # Value does not exist; add it
+            $this.AddKeyValue([String]$Value,$Data)
+        }
+        # Display key values for user-interactive sessions
+        $this.DisplayKeyValues()
+    }
+    # METHODS: Write key values method
+    [Boolean] ProcessChanges() {
+        # Control variable
+        [Boolean] $Return = $true
+        # Determine that operator is local administrator
+        If (Test-OZOLocalAdministrator -eq $true) {
+            # Determine if key exists and if not create it
+            # Perform the remove operation
+            # Perform the add operation
+            # Perform the update operation
+        } Else {
+            Write-OZOProvider -Message "Writing registry keys requires Administrator privileges." -Level "Warning"
+        }
+        # Return
+        return $Return
+    }
+}
+
+Class OZORegistryKeyValue {
+    # PROPERTIES
+    [String] $Type  = $null
+    [String] $Value = $null
+    # METHODS: Constructor method [Binary]
+    OZORegistryKeyValue([String]$Value,[Byte[]]$Data) {
         # Set properties
-        $this.Type = $this.keyObject.GetValueKind($this.Value)
+        $this.Value = $Value
+        $this.Type  = "Binary"
+        # Add and set Data property
+        Add-Member -InputObject $this -MemberType NoteProperty -Name "Data" -TypeName "Byte[]" -Value $Data -Force
+    }
+    # METHODS: Constructor method [Dword]
+    OZORegistryKeyValue([String]$Value,[Int32]$Data) {
+        # Set properties
+        $this.Value = $Value
+        $this.Type  = "Dword"
+        # Add and set Data property
+        Add-Member -InputObject $this -MemberType NoteProperty -Name "Data" -TypeName "Int32" -Value $Data -Force
+    }
+    # METHODS: Constructor method [ExpandString|String]
+    OZORegistryKeyValue([String]$Value,[String]$Data) {
+        # Set properties
+        $this.Value = $Value
+        # Determine if string contains a % character
+        If ($Data -Like "*%*") {
+            # Data contains a %
+            $this.Type = "ExpandString"
+        } Else {
+            # Data does not contain a % character
+            $this.Type = "String"
+        }
         # Add the Data property with the correct type
-        Add-Member -InputObject $this -MemberType NoteProperty -Name "Data" -TypeName $this.Type -Value $null -Force
-        
+        Add-Member -InputObject $this -MemberType NoteProperty -Name "Data" -TypeName "String" -Value $Data -Force
     }
-    # METHODS: Get data method
-    Hidden [Void] GetData() {
-        # Populate the Data property with the value data
-        $this.Data = $this.keyObject.GetValue($this.Value)
-    }
-    # "Binary", "Dword", "ExpandString", "MultString", "Qword", "String"
-    # METHODS: Write key value [byte] data
-    [Boolean] WriteKeyValueData([Byte]$Data) {
-        # Control variable
-        [Boolean] $Return = $true
+    # METHODS: Constructor method [MultString]
+    OZORegistryKeyValue([String]$Value,[String[]]$Data) {
         # Set properties
-        $this.Type = "Binary"
-        [Microsoft.Win32.Registry]::SetValue($this.Key,$this.Value,$Data,[Microsoft.Win32.RegistryValueKind]::$this.Type)
-        # Return
-        return $Return
+        $this.Value = $Value
+        $this.Type  = "MultString"
+        # Add and set Data property
+        Add-Member -InputObject $this -MemberType NoteProperty -Name "Data" -TypeName "String[]" -Value $Data -Force
     }
-    # METHODS: Write key value [string] data
-    [Boolean] WriteKeyValueData([String]$Data) {
-        # Control variable
-        [Boolean] $Return = $true
+    # METHODS: Constructor method [Qword]
+    OZORegistryKeyValue([String]$Value,[Int64]$Data) {
         # Set properties
-        $this.Type = "String"
-        # Return
-        return $Return
-    }
-    # METHODS: Write key value [string] data
-    [Boolean] WriteKeyValueData([String[]]$Data) {
-        # Control variable
-        [Boolean] $Return = $true
-        # Set properties
-        $this.Type = "MultString"
-        # Return
-        return $Return
+        $this.Value = $Value
+        $this.Type  = "Qword"
+        # Add and set Data property
+        Add-Member -InputObject $this -MemberType NoteProperty -Name "Data" -TypeName "Int64" -Value $Data -Force
     }
 }
 
@@ -143,40 +289,38 @@ Function Convert-OZORegistryPath {
     }
 }
 
-Function Get-OZORegistryItem {
+Function Get-OZORegistryKey {
     <#
         .SYNOPSIS
         See description.
         .DESCRIPTION
-        Returns an OZODirectorySummary object.
-        .PARAMETER LongLength
-        Number of characters in a long path. Defaults to 256.
-        .PARAMETER Path
-        The path to inspect.
+        Returns an OZORegistryKey object.
+        .PARAMETER Key
+        The registry key in the short ("HKLM:\...") or long ("HKEY_LOCAL_MACHINE\...") format. Key may be an existing key or a new (non-existing) key.
         .EXAMPLE
-        $ozoDirectorySummary = (Get-OZODirectorySummary -Path "C:\Temp")
+        $ozoRegistryKey = (Get-OZORegistryKey -Key "HKEY_LOCAL_MACHINE\SOFTWARE\One Zero One")
         .LINK
-        https://github.com/onezeroone-dev/OZOFiles-PowerShell-Module/blob/main/Documentation/Get-OZODirectorySummary.md
+        https://github.com/onezeroone-dev/OZORegistry-PowerShell-Module/blob/main/Documentation/Get-OZORegistryKey.md
     #>
     [CmdLetBinding()] Param (
-        [Parameter(Mandatory=$false,HelpMessage="Number of characters in a long path")][Int32]$LongLength = 256,
-        [Parameter(Mandatory=$true,HelpMessage="Path to inspect")][String]$Path
+        [Parameter(Mandatory=$true,HelpMessage="The registry key")][String]$Key
     )
-    return [OZODirectorySummary]::new($LongLength,$Path)
+    # Return an OZORegistryKey object
+    $PSCmdlet.WriteObject(([OZORegistryKey]::new($Key)))
 }
 
-Function Read-OZORegistryItem {
+Function Read-OZORegistryKeyValueData {
     <#
         .SYNOPSIS
         See description.
         .DESCRIPTION
-        Returns a registry key value data. Returns "Invalid path" if the path is not valid and "Not found" if the path does not exist. 
+        Returns the data for an existing key value using the correspoinding data type. Returns "Invalid path" if the path is not valid, "Not found" if the path does not exist, "Could not read values" if the key values could not be read, and "Unhandled data type" if the data cannot be returned.
         .PARAMETER Key
         The registry key.
         .PARAMETER Value
         The key value.
         .EXAMPLE
-        Read-OZORegistryKeyValueData -Key "Computer\HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion" -Value "ProgramFilesDir"
+        Read-OZORegistryKeyValueData -Key "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion" -Value "ProgramFilesDir"
         C:\Program Files
         .LINK
         https://github.com/onezeroone-dev/OZORegistry-PowerShell-Module/blob/main/Documentation/Read-OZORegistryKeyValueData.md
@@ -188,15 +332,42 @@ Function Read-OZORegistryItem {
         [Parameter(Mandatory=$true,HelpMessage="The registry key")][String]$Key,
         [Parameter(Mandatory=$true,HelpMessage="The key value")][String]$Value
     )
-    # Attempt to get the data
-    $data = [Microsoft.Win32.Registry]::GetValue($Key,$Value,"Not found")
-    # Determine if the data is null
-    If ($null -eq $data) {
-        # Data is null
-        $data = "Invalid path"
+    # Instantiate an OZORegistryKey object
+    $ozoRegistryKey = [OZORegistryKey]::new($Key)
+    # Determine if key is valid
+    If ($ozoRegistryKey.keyValid -eq $true) {
+        # Key path is valid; determine if the key exists
+        # determine if the value exists in the key
+        If ($ozoRegistryKey.keyExists -eq $true) {
+            # Key exists; determine if the values were read
+            If ($ozoRegistryKey.valuesRead -eq $true) {
+                #Value exists in Values list
+                If ($ozoRegistryKey.Values.Value -Contains $Value) {
+                    # Get the specific Value as a local PSCustomObject
+                    [PSCustomObject]$keyValue = ($ozoRegistryKey.Values | Where-Object {$_.Value -eq $Value})
+                    # Switch on Type
+                    Switch ($keyValue.Type.ToLower()) {
+                        "binary"       { return [Byte[]]   $keyValue.Data }
+                        "dword"        { return [Int32]    $keyValue.Data }
+                        "expandstring" { return [String]   $keyValue.Data }
+                        "multstring"   { return [String[]] $keyValue.Data }
+                        "qword"        { return [Int64]    $keyValue.Data }
+                        "string"       { return [String]   $keyValue.Data }
+                        default        { return [String]   "Unhandled data type" }
+                    }
+                }
+            } Else {
+                # Could not read values
+                return [String]"Could not read key values"
+            }
+        } Else {
+            # Key path does not exist
+            return [String]"Not found"
+        }
+    } Else {
+        # Key Path is not valid
+        return [String]"Invalid path"
     }
-    # Return the data
-    return $data
 }
 
 Function Read-OZORegistryKeyValueType {
@@ -204,7 +375,7 @@ Function Read-OZORegistryKeyValueType {
         .SYNOPSIS
         See description.
         .DESCRIPTION
-        Returns the data type for a registry key value. Returns "Invalid path" if the path is not valid.
+        Returns the type for an existing key value. Returns "Invalid path" if the path is not valid, "Not found" if the path does not exist, and "Could not read values" if the key values could not be read.
         .PARAMETER Key
         The registry key.
         .PARAMETER Value
@@ -222,14 +393,32 @@ Function Read-OZORegistryKeyValueType {
         [Parameter(Mandatory=$true,HelpMessage="The registry key")][String]$Key,
         [Parameter(Mandatory=$true,HelpMessage="The key value")][String]$Value
     )
-    # Try to get the value type
-    Try {
-        $type = (Get-Item -Path ("Microsoft.PowerShell.Core\Registry::" + $Key) -ErrorAction Stop).GetValueKind($Value)
-    } Catch {
-        $type = "Invalid path"
+    # Instantiate an OZORegistryKey object
+    $ozoRegistryKey = [OZORegistryKey]::new($Key)
+    # Determine if key is valid
+    If ($ozoRegistryKey.keyValid -eq $true) {
+        # Key path is valid; determine if the key exists
+        # determine if the value exists in the key
+        If ($ozoRegistryKey.keyExists -eq $true) {
+            # Key exists; determine if the values were read
+            If ($ozoRegistryKey.valuesRead -eq $true) {
+                #Value exists in Values list
+                If ($ozoRegistryKey.Values.Value -Contains $Value) {
+                    # Get the specific Value as a local PSCustomObject
+                    return ($ozoRegistryKey.Values | Where-Object {$_.Value -eq $Value}).Type
+                }
+            } Else {
+                # Could not read values
+                return [String]"Could not read key values"
+            }
+        } Else {
+            # Key path does not exist
+            return [String]"Not found"
+        }
+    } Else {
+        # Key Path is not valid
+        return [String]"Invalid path"
     }
-    # Return the type
-    return $type
 }
 
 Function Write-OZORegistryKeyValueData {
@@ -279,4 +468,4 @@ Function Write-OZORegistryKeyValueData {
     }
 }
 
-Export-ModuleMember -Function Convert-OZORegistryString,Read-OZORegistryKeyValueData,Read-OZORegistryKeyValueType,Write-OZORegistryKeyValueData
+Export-ModuleMember -Function Convert-OZORegistryString,Get-OZORegistryKey,Read-OZORegistryKeyValueData,Read-OZORegistryKeyValueType,Write-OZORegistryKeyValueData
