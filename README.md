@@ -15,11 +15,14 @@ Import-Module OZORegistry
 ```
 
 ## Functions
-- [Convert-OZORegistryPath](Documentation/Convert-OZORegistryPath.md)
-- [Get-OZORegistryKey](Documentation/Get-OZORegistryKey.md)
-- [Read-OZORegistryKeyValueData](Documentation/Read-OZORegistryKeyValueData.md)
-- [Read-OZORegistryKeyValueType](Documentation/Read-OZORegistryKeyValueType.md)
-- [Write-OZORegistryKeyValueData](Documentation/Write-OZORegistryKeyValueData.md)
+
+|Function|Description|
+|--------|-----------|
+|[Convert-OZORegistryPath](Documentation/Convert-OZORegistryPath.md)||
+|[Get-OZORegistryKey](Documentation/Get-OZORegistryKey.md)|Returns an `OZORegistryKey` object that represents a registry key (whether existing or not). The object contains methods for reading, adding, updating, and removing key values; and a method for processing (writing) the changes to the registry. This function (and resulting object) is the most robust and flexible use of this module.|
+|[Read-OZORegistryKeyValueData](Documentation/Read-OZORegistryKeyValueData.md)|A simple function for returning the data from a single registry key value.|
+|[Read-OZORegistryKeyValueType](Documentation/Read-OZORegistryKeyValueType.md)|A simple function for returning the data _type_ from a single registry key value.|
+|[Write-OZORegistryKeyValueData](Documentation/Write-OZORegistryKeyValueData.md)|A simple function for adding or updating a single registry key value.|
 
 ## Classes
 - [OZORegistryKey](Documentation/OZORegistryKey.md)

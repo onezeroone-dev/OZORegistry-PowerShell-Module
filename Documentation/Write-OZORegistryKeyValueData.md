@@ -2,14 +2,14 @@
 This function is part of the [OZORegistry PowerShell Module](../README.md).
 
 ## Description
-
+A simple function for adding or updating a single registry key value.
 
 ## Syntax
 ```
 Write-OZORegistryKeyValueData
     -Key   <String>
     -Value <String>
-    -Data
+    -Data  <Byte[] | Int32 | Int64 | String | String[]>
     -Type  <String>
 ```
 
@@ -27,4 +27,4 @@ Write-OZORegistryKeyValueData
 ```
 
 ## Notes
-Requires Administrator privileges. This function expectes registry keys in the _HKEY_LOCAL_MACHINE\\..._ format. If your path is in the _HKLM:\\..._ format, reformat it with [`Convert-OZORegistryPath`](Convert-OZORegistryPath.md).
+Requires Administrator privileges.

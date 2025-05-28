@@ -2,7 +2,7 @@
 This function is part of the [OZORegistry PowerShell Module](../README.md).
 
 ## Description
-Returns the type for an existing key value. Returns "Invalid path" if the path is not valid, "Not found" if the path does not exist, and "Could not read values" if the key values could not be read.
+A simple function for returning the data _type_ from a single registry key value. Returns "Invalid path" if the path is not valid, "Not found" if the path does not exist, and "Could not read values" if the key values could not be read.
 
 ## Syntax
 ```
@@ -18,10 +18,13 @@ Read-OZORegistryKeyValueType
 |`Value`|The key value.|
 
 ## Examples
+### Example 1
 ```powershell
-Read-OZORegistryKeyValueType -Key "Computer\HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion" -Value "ProgramFilesDir"
+Read-OZORegistryKeyValueType -Key "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion" -Value "ProgramFilesDir"
 String
 ```
-
-## Notes
-This function expectes registry keys in the _HKEY_LOCAL_MACHINE\\..._ format. If your path is in the _HKLM:\\..._ format, reformat it with [`Convert-OZORegistryPath`](Convert-OZORegistryPath.md).
+### Example 2
+```powershell
+Read-OZORegistryKeyValueType -Key "HLKM:\SOFTWARE\Microsoft\Windows\CurrentVersion" -Value "ProgramFilesDir"
+String
+```

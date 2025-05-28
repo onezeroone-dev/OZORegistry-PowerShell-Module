@@ -3,8 +3,8 @@ This class is part of the [OZORegistry PowerShell Module](../README.md). Calling
 
 ## Associations
 ```
-+ $Type:String  = $null
-+ $Value:String = $null
++ $Name:String = $null
++ $Type:String = $null
 ```
 ---
 ```

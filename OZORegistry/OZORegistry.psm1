@@ -136,6 +136,73 @@ Class OZORegistryKey {
             $this.Values | Select-Object -Property Name,Type,Data | Format-Table | Out-Host
         }
     }
+    # METHODS: Get registry key value data
+    [Object] ReturnKeyValueData($Name) {
+        If ($this.keyValid -eq $true) {
+            # Key path is valid; determine if the key exists
+            # determine if the value exists in the key
+            If ($this.keyExists -eq $true) {
+                # Key exists; determine if the values were read
+                If ($this.valuesRead -eq $true) {
+                    #Value exists in Values list
+                    If ($this.Values.Name -Contains $Name) {
+                        # Get the specific Value as a local PSCustomObject
+                        [PSCustomObject]$keyValue = ($this.Values | Where-Object {$_.Name -eq $Name})
+                        # Switch on Type
+                        Switch ($keyValue.Type.ToLower()) {
+                            "binary"       { return [Byte[]]   $keyValue.Data }
+                            "dword"        { return [Int32]    $keyValue.Data }
+                            "expandstring" { return [String]   $keyValue.Data }
+                            "multstring"   { return [String[]] $keyValue.Data }
+                            "qword"        { return [Int64]    $keyValue.Data }
+                            "string"       { return [String]   $keyValue.Data }
+                            default        { return [String]   "Unhandled data type" }
+                        }
+                    }
+                } Else {
+                    # Could not read values
+                    return "Could not read key values"
+                }
+            } Else {
+                # Key path does not exist
+                return "Not found"
+            }
+        } Else {
+            # Key Path is not valid
+            return "Invalid path"
+        }
+        #Return
+        return "Unsupported"
+    }
+    # METHODS: Get registry key value type
+    [String] ReturnKeyValueType($Name) {
+        # Determine if key is valid
+        If ($this.keyValid -eq $true) {
+            # Key path is valid; determine if the key exists
+            # determine if the value exists in the key
+            If ($this.keyExists -eq $true) {
+                # Key exists; determine if the values were read
+                If ($this.valuesRead -eq $true) {
+                    #Value exists in Values list
+                    If ($this.Values.Name -Contains $Name) {
+                        # Get the specific Value as a local PSCustomObject
+                        return ($this.Values | Where-Object {$_.Name -eq $Name}).Type
+                    }
+                } Else {
+                    # Could not read values
+                    return "Could not read key values"
+                }
+            } Else {
+                # Key path does not exist
+                return "Not found"
+            }
+        } Else {
+            # Key Path is not valid
+            return "Invalid path"
+        }
+        # Return
+        return "Unsupported"
+    }
     # METHODS: Add key value method
     [Void] AddKeyValue([String]$Name,$Data) {
         # Determine if value already exists in key
@@ -405,52 +472,19 @@ Function Read-OZORegistryKeyValueData {
         .EXAMPLE
         Read-OZORegistryKeyValueData -Key "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion" -Value "ProgramFilesDir"
         C:\Program Files
+        .EXAMPLE
+        Read-OZORegistryKeyValueData -Key "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion" -Value "ProgramFilesDir"
+        C:\Program Files
         .LINK
         https://github.com/onezeroone-dev/OZORegistry-PowerShell-Module/blob/main/Documentation/Read-OZORegistryKeyValueData.md
-        .NOTES
-        This function expectes registry keys in the "HKEY_LOCAL_MACHINE\..." format. If your path is in the "HKLM:\..." format, reformat it with Convert-OZORegistryPath.
     #>
     # Parameters
     [CmdletBinding()] Param (
         [Parameter(Mandatory=$true,HelpMessage="The registry key")][String]$Key,
         [Parameter(Mandatory=$true,HelpMessage="The key value")][String]$Value
     )
-    # Instantiate an OZORegistryKey object
-    $ozoRegistryKey = [OZORegistryKey]::new($Key)
-    # Determine if key is valid
-    If ($ozoRegistryKey.keyValid -eq $true) {
-        # Key path is valid; determine if the key exists
-        # determine if the value exists in the key
-        If ($ozoRegistryKey.keyExists -eq $true) {
-            # Key exists; determine if the values were read
-            If ($ozoRegistryKey.valuesRead -eq $true) {
-                #Value exists in Values list
-                If ($ozoRegistryKey.Values.Value -Contains $Value) {
-                    # Get the specific Value as a local PSCustomObject
-                    [PSCustomObject]$keyValue = ($ozoRegistryKey.Values | Where-Object {$_.Value -eq $Value})
-                    # Switch on Type
-                    Switch ($keyValue.Type.ToLower()) {
-                        "binary"       { return [Byte[]]   $keyValue.Data }
-                        "dword"        { return [Int32]    $keyValue.Data }
-                        "expandstring" { return [String]   $keyValue.Data }
-                        "multstring"   { return [String[]] $keyValue.Data }
-                        "qword"        { return [Int64]    $keyValue.Data }
-                        "string"       { return [String]   $keyValue.Data }
-                        default        { return [String]   "Unhandled data type" }
-                    }
-                }
-            } Else {
-                # Could not read values
-                return [String]"Could not read key values"
-            }
-        } Else {
-            # Key path does not exist
-            return [String]"Not found"
-        }
-    } Else {
-        # Key Path is not valid
-        return [String]"Invalid path"
-    }
+    # Instantiate an OZORegistryKey object and return the value data
+    return ([OZORegistryKey]::new($Key)).GetKeyValueData($Value)
 }
 
 Function Read-OZORegistryKeyValueType {
@@ -464,44 +498,21 @@ Function Read-OZORegistryKeyValueType {
         .PARAMETER Value
         The key value.
         .EXAMPLE
-        Read-OZORegistryKeyValueType -Key "Computer\HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion" -Value "ProgramFilesDir"
+        Read-OZORegistryKeyValueType -Key "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion" -Value "ProgramFilesDir"
+        String
+        .EXAMPLE
+        Read-OZORegistryKeyValueType -Key "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion" -Value "ProgramFilesDir"
         String
         .LINK
         https://github.com/onezeroone-dev/OZORegistry-PowerShell-Module/blob/main/Documentation/Read-OZORegistryKeyValueType.md
-        .NOTES
-        This function expectes registry keys in the "HKEY_LOCAL_MACHINE\..." format. If your path is in the "HKLM:\..." format, reformat it with Convert-OZORegistryPath.
     #>
     # Parameters
     [CmdletBinding()] Param (
         [Parameter(Mandatory=$true,HelpMessage="The registry key")][String]$Key,
         [Parameter(Mandatory=$true,HelpMessage="The key value")][String]$Value
     )
-    # Instantiate an OZORegistryKey object
-    $ozoRegistryKey = [OZORegistryKey]::new($Key)
-    # Determine if key is valid
-    If ($ozoRegistryKey.keyValid -eq $true) {
-        # Key path is valid; determine if the key exists
-        # determine if the value exists in the key
-        If ($ozoRegistryKey.keyExists -eq $true) {
-            # Key exists; determine if the values were read
-            If ($ozoRegistryKey.valuesRead -eq $true) {
-                #Value exists in Values list
-                If ($ozoRegistryKey.Values.Value -Contains $Value) {
-                    # Get the specific Value as a local PSCustomObject
-                    return ($ozoRegistryKey.Values | Where-Object {$_.Value -eq $Value}).Type
-                }
-            } Else {
-                # Could not read values
-                return [String]"Could not read key values"
-            }
-        } Else {
-            # Key path does not exist
-            return [String]"Not found"
-        }
-    } Else {
-        # Key Path is not valid
-        return [String]"Invalid path"
-    }
+    # Instantiate an OZORegistryKey object and return the value type
+    return ([OZORegistryKey]::new($Key)).GetKeyValueType($Value)
 }
 
 Function Write-OZORegistryKeyValueData {
