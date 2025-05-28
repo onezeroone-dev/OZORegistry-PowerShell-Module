@@ -133,49 +133,49 @@ Class OZORegistryKey {
         # Determine if session is user-interactive
         If (Get-OZOUserInteractive -eq $true) {
             # Session is user-interactive
-            $this.Values | Select-Object -Property Value,Type,Data | Format-Table | Out-Host
+            $this.Values | Select-Object -Property Name,Type,Data | Format-Table | Out-Host
         }
     }
     # METHODS: Add key value method
-    [Void] AddKeyValue([String]$Value,$Data) {
+    [Void] AddKeyValue([String]$Name,$Data) {
         # Determine if value already exists in key
-        If ($this.Values.Value -Contains $Value) {
+        If ($this.Values.Name -Contains $Name) {
             # Values already contains Value
-            $this.Logger.Write(("Key already contains a " + $Value + " value; skipping."),"Warning")
+            $this.Logger.Write(("Key already contains a " + $Name + " value; skipping."),"Warning")
         } Else {
             # Values does not already contain this Value; add to list
-            $this.Values.Add(([OZORegistryKeyValue]::new($Value,$Data)))
+            $this.Values.Add(([OZORegistryKeyValue]::new($Name,$Data)))
         }
         # Display key values for user-interactive sessions
         $this.DisplayKeyValues()
     }
     # METHODS: Add key value method
-    [Void] RemoveKeyValue([String]$Value) {
+    [Void] RemoveKeyValue([String]$Name) {
         # Determine if value exists in key
-        If ($this.Values.Value -Contains $Value) {
+        If ($this.Values.Name -Contains $Name) {
             # Values contains Value; remove it
-            $this.Values.Remove(($this.Values | Where-Object {$_.Value -eq $Value}))
+            $this.Values.Remove(($this.Values | Where-Object {$_.Name -eq $Name}))
         } Else {
             # Values does not contain Value; nothing to do
-            $this.Logger.Write(("Key does not contain a " + $Value + " value; skipping."),"Warning")
+            $this.Logger.Write(("Key does not contain a " + $Name + " value; skipping."),"Warning")
         }
         # Display key values for user-interactive sessions
         $this.DisplayKeyValues()
     }
     # METHODS: Add key value method
-    [Void] UpdateKeyValue([String]$Value,$Data) {
+    [Void] UpdateKeyValue([String]$Name,$Data) {
         # Determine if this value exists in Values
-        If ($this.Values.Value -Contains $Value) {
+        If ($this.Values.Name -Contains $Name) {
             # Value exists; determine if type of value matches Data type
-            If (($this.Values | Where-Object {$_.Value -eq $Value}).Data.GetType() -eq $Data.GetType()) {
+            If (($this.Values | Where-Object {$_.Name -eq $Name}).Data.GetType() -eq $Data.GetType()) {
                 # Data types match; update with new Data
-                ($this.Values | Where-Object {$_.Value -eq $Value}).Data = $Data
+                ($this.Values | Where-Object {$_.Name -eq $Name}).Data = $Data
             } Else {
                 $this.Logger.Write("Data type does not match; value will not be updated.","Warning")
             }
         } Else {
             # Value does not exist; add it
-            $this.AddKeyValue([String]$Value,$Data)
+            $this.AddKeyValue([String]$Name,$Data)
         }
         # Display key values for user-interactive sessions
         $this.DisplayKeyValues()
@@ -184,14 +184,97 @@ Class OZORegistryKey {
     [Boolean] ProcessChanges() {
         # Control variable
         [Boolean] $Return = $true
-        # Determine that operator is local administrator
+        # Determine that operator is local Administrator
         If (Test-OZOLocalAdministrator -eq $true) {
-            # Determine if key exists and if not create it
+            # Operator is local Administrator; determine if key does not exist
+            If ([Boolean](Test-Path -Path $this.keyPath -ErrorAction SilentlyContinue) -eq $false) {
+                # Key does not exist; try to create it
+                Try {
+                    New-Item -Path $this.keyPath -ErrorAction Stop
+                    # Success; iterate through Values
+                    ForEach ($Value in $this.Values) {
+                        # Try to create each value
+                        Try {
+                            New-ItemProperty -Path $this.keyPath -Name $Value.Name -Value $Value.Data -PropertyType $Value.Type -ErrorAction Stop
+                            # Success
+                        } Catch {
+                            # Failure
+                            $this.Logger.Write(("Error creating " + $Value.Name + " in " + $this.keyPath + "."),"Error")
+                            $Return = $false
+                        }
+                    }
+                } Catch {
+                    # Failure
+                    $this.Logger.Write(("Failed to create registry key" + $this.keyPath + "."),"Error")
+                    $Return = $false
+                }
+            } Else {
+                # The key already exists; perform the remove operation - iterate through the properties in Key
+                ForEach ($Property in $this.Key.Property) {
+                    # Determine if the property is not found in Values.Name
+                    If ($this.Values.Name -NotContains $Property) {
+                        # Property is not found in Values.Name; try to delete it
+                        Try {
+                            Remove-ItemProperty -Path $this.keyPath -Name $Property -ErrorAction Stop
+                            # Success
+                        } Catch {
+                            # Failure
+                            $this.Logger.Write(("Failed to remove " + $Property + " from " + $this.keyPath + "."),"Error")
+                            $Return = $false
+                        }
+                    }
+                }
+                # Perform the update operation - iterate through the Names in Value
+                ForEach ($Value in $this.Value) {
+                    # Determine that Key.Property contains Value.Name
+                    If ($this.Key.Property -Contains $Value.Name) {
+                        # Key.Proeperty contains Value.Name; determine that Value.Data is different from the Key.Property value
+                        If ($Value.Data -ne $this.Key.GetValue($Value.Name)) {
+                            # Value.Data and the Key.Property value do not match; determine that the data types match
+                            If ($Value.Type -eq $this.Key.GetValueKind($Value.Name)) {
+                                # Types match; try to update
+                                Try {
+                                    Set-ItemProperty -Path $this.keyPath -Name $Value.Name -Value $Value.Data
+                                    # Success
+                                } Catch {
+                                    # Failure
+                                    $this.Logger.Write(("Unable to update " + $Value.Name + " in " + $this.keyPath + "."),"Error")
+                                    $Return = $false
+                                }
+                            } Else {
+                                # Types do not match
+                                $this.Logger.Write(("Data type mismatch when attempting to update " + $Value.Name + " in " + $this.keyPath + "."),"Error")
+                                $Return = $false
+                            }
+                        }
+                    }
+                }
+                # Perform the add operation - iterate through the Names in Value
+                ForEach ($Value in $this.Values) {
+                    # Determine if the properties in Key do not contain Value
+                    If ($this.Key.Property -NotContains $Value.Name) {
+                        # Key does not contain Value; try to add it
+                        Try {
+                            New-ItemProperty -Path $this.keyPath -Name $Value.Name -Value $Value.Data -PropertyType $Value.Type -ErrorAction Stop
+                            # Success
+                        } Catch {
+                            # Failure
+                            $this.Logger.Write(("Failed to add " + $Value.Name + " to " + $this.keyPath),"Error")
+                            $Return = $false
+                        }
+                    }
+                    
+                }
+            }
             # Perform the remove operation
             # Perform the add operation
             # Perform the update operation
+            # Reread the key
+            $this.ReadKey()
         } Else {
-            Write-OZOProvider -Message "Writing registry keys requires Administrator privileges." -Level "Warning"
+            # Operator is not local Administrator
+            $this.Logger.Write("Writing registry keys requires Administrator privileges.","Error")
+            $Return = $false
         }
         # Return
         return $Return
@@ -200,28 +283,28 @@ Class OZORegistryKey {
 
 Class OZORegistryKeyValue {
     # PROPERTIES
-    [String] $Type  = $null
-    [String] $Value = $null
+    [String] $Name = $null
+    [String] $Type = $null
     # METHODS: Constructor method [Binary]
-    OZORegistryKeyValue([String]$Value,[Byte[]]$Data) {
+    OZORegistryKeyValue([String]$Name,[Byte[]]$Data) {
         # Set properties
-        $this.Value = $Value
-        $this.Type  = "Binary"
+        $this.Name = $Name
+        $this.Type = "Binary"
         # Add and set Data property
         Add-Member -InputObject $this -MemberType NoteProperty -Name "Data" -TypeName "Byte[]" -Value $Data -Force
     }
     # METHODS: Constructor method [Dword]
-    OZORegistryKeyValue([String]$Value,[Int32]$Data) {
+    OZORegistryKeyValue([String]$Name,[Int32]$Data) {
         # Set properties
-        $this.Value = $Value
-        $this.Type  = "Dword"
+        $this.Name = $Name
+        $this.Type = "Dword"
         # Add and set Data property
         Add-Member -InputObject $this -MemberType NoteProperty -Name "Data" -TypeName "Int32" -Value $Data -Force
     }
     # METHODS: Constructor method [ExpandString|String]
-    OZORegistryKeyValue([String]$Value,[String]$Data) {
+    OZORegistryKeyValue([String]$Name,[String]$Data) {
         # Set properties
-        $this.Value = $Value
+        $this.Name = $Name
         # Determine if string contains a % character
         If ($Data -Like "*%*") {
             # Data contains a %
@@ -234,18 +317,18 @@ Class OZORegistryKeyValue {
         Add-Member -InputObject $this -MemberType NoteProperty -Name "Data" -TypeName "String" -Value $Data -Force
     }
     # METHODS: Constructor method [MultString]
-    OZORegistryKeyValue([String]$Value,[String[]]$Data) {
+    OZORegistryKeyValue([String]$Name,[String[]]$Data) {
         # Set properties
-        $this.Value = $Value
-        $this.Type  = "MultString"
+        $this.Name = $Name
+        $this.Type = "MultString"
         # Add and set Data property
         Add-Member -InputObject $this -MemberType NoteProperty -Name "Data" -TypeName "String[]" -Value $Data -Force
     }
     # METHODS: Constructor method [Qword]
-    OZORegistryKeyValue([String]$Value,[Int64]$Data) {
+    OZORegistryKeyValue([String]$Name,[Int64]$Data) {
         # Set properties
-        $this.Value = $Value
-        $this.Type  = "Qword"
+        $this.Name = $Name
+        $this.Type = "Qword"
         # Add and set Data property
         Add-Member -InputObject $this -MemberType NoteProperty -Name "Data" -TypeName "Int64" -Value $Data -Force
     }
