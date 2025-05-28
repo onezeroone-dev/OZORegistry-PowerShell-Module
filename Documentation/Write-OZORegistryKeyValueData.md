@@ -19,7 +19,7 @@ Write-OZORegistryKeyValueData
 |`Key`|The registry key.|
 |`Value`|The key value.|
 |`Data`|The value data.|
-|`Type`|The data type. Valid types are `Binary`, `Dword`, `ExpandString`, `MultString`, `None`, `Qword`, `String`, and `Unknown`. Defaults to `String`.|
+|`Type`|The data type. Valid types are `Binary`, `Dword`, `ExpandString`, `MultString`, `Qword`, and `String`. Defaults to `String`.|
 
 ## Examples
 ```powershell
