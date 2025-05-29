@@ -1,8 +1,13 @@
 # OZORegistryKey Class
-This class is part of the [OZORegistry PowerShell Module](../README.md). Calling the `Get-OZORegistryKey` function returns an object of this class.
+This class is part of the [OZORegistry PowerShell Module](../README.md).
 
-## Associations
+## Usage
+Return an object of this class with [`Get-OZORegistryKey`](Get-OZORegistryKey.md).
+
+## Definition
+### Associations
 ```
++ $Display:Boolean       = $false
 + $keyExists:Boolean     = $true
 + $keyValid:Boolean      = $true
 + $valuesRead:Boolean    = $true
@@ -11,7 +16,7 @@ This class is part of the [OZORegistry PowerShell Module](../README.md). Calling
 + $Logger:PSCustomObject = $null
 + $Values:System.Collections.Generic.List[PSCustomObject] = @()
 ```
-## Operations
+### Operations
 ```
 + OZORegistryKey($KeyPath:String):Void
 - ValidateKeyPath($KeyPath:String):Boolean

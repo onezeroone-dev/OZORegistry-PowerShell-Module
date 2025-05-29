@@ -1,6 +1,7 @@
 # CLASSES
 Class OZORegistryKey {
     # PROPERTIES: Booleans, Strings
+    [Boolean] $Display    = $false
     [Boolean] $keyExists  = $true
     [Boolean] $keyValid   = $true
     [Boolean] $valuesRead = $true
@@ -11,9 +12,13 @@ Class OZORegistryKey {
     # PROPERTIES: PSCustomObject Lists
     [System.Collections.Generic.List[PSCustomObject]] $Values = @()
     # METHODS: Constructor method
-    OZORegistryKey([String]$KeyPath) {
+    OZORegistryKey([String]$KeyPath,[Boolean]$Display) {
+        # Set properties
+        $this.Display = $Display
         # Create a logger
         $this.Logger = (New-OZOLogger)
+        # Determine if Display is false and if so disable Logger display
+        If ($this.Display -eq $false) { $this.Logger.SetConsoleOutput("off") }
         # Call ValidateKey to determine if KeyPath format is valid [and populate this.KeyPath]
         If ($this.ValidateKeyPath($KeyPath) -eq $true) {
             # Key is valid
@@ -131,8 +136,8 @@ Class OZORegistryKey {
     # METHODS: Display key values
     [Void] DisplayKeyValues() {
         # Determine if session is user-interactive
-        If (Get-OZOUserInteractive -eq $true) {
-            # Session is user-interactive
+        If ((Get-OZOUserInteractive) -eq $true -And $this.Display -eq $true) {
+            # Session is user-interactive and Display is True
             $this.Values | Select-Object -Property Name,Type,Data | Format-Table | Out-Host
         }
     }
@@ -158,6 +163,9 @@ Class OZORegistryKey {
                             "string"       { return [String]   $keyValue.Data }
                             default        { return [String]   "Unhandled data type" }
                         }
+                    } Else {
+                        # Name not found in Values.Name
+                        return "Value not found in Key"
                     }
                 } Else {
                     # Could not read values
@@ -447,16 +455,23 @@ Function Get-OZORegistryKey {
         Returns an OZORegistryKey object.
         .PARAMETER Key
         The registry key in the short ("HKLM:\...") or long ("HKEY_LOCAL_MACHINE\...") format. Key may be an existing key or a new (non-existing) key.
+        .PARAMETER Display
+        Display console messages (effective only for user-interactive sessions).
         .EXAMPLE
         $ozoRegistryKey = (Get-OZORegistryKey -Key "HKEY_LOCAL_MACHINE\SOFTWARE\One Zero One")
         .LINK
         https://github.com/onezeroone-dev/OZORegistry-PowerShell-Module/blob/main/Documentation/Get-OZORegistryKey.md
     #>
     [CmdLetBinding()] Param (
-        [Parameter(Mandatory=$true,HelpMessage="The registry key")][String]$Key
+        [Parameter(Mandatory=$true,HelpMessage="The registry key")][String]$Key,
+        [Parameter(Mandatory=$false,HelpMessage="Display console messages")][Switch]$Display
     )
     # Return an OZORegistryKey object
-    $PSCmdlet.WriteObject(([OZORegistryKey]::new($Key)))
+    If ($Display -eq $true ) {
+        $PSCmdlet.WriteObject(([OZORegistryKey]::new($Key,$true)))
+    } Else {
+        $PSCmdlet.WriteObject(([OZORegistryKey]::new($Key,$false)))
+    }
 }
 
 Function Read-OZORegistryKeyValueData {
@@ -464,7 +479,7 @@ Function Read-OZORegistryKeyValueData {
         .SYNOPSIS
         See description.
         .DESCRIPTION
-        Returns the data for an existing key value using the correspoinding data type. Returns "Invalid path" if the path is not valid, "Not found" if the path does not exist, "Could not read values" if the key values could not be read, and "Unhandled data type" if the data cannot be returned.
+        A simple function for returning the data from a single registry key value. Returns "Invalid path" if the path is not valid, "Not found" if the path does not exist, "Could not read values" if the key values could not be read, and "Unhandled data type" if the data cannot be returned.
         .PARAMETER Key
         The registry key.
         .PARAMETER Value
@@ -484,7 +499,7 @@ Function Read-OZORegistryKeyValueData {
         [Parameter(Mandatory=$true,HelpMessage="The key value")][String]$Value
     )
     # Instantiate an OZORegistryKey object and return the value data
-    return ([OZORegistryKey]::new($Key)).GetKeyValueData($Value)
+    return ([OZORegistryKey]::new($Key,$false)).ReturnKeyValueData($Value)
 }
 
 Function Read-OZORegistryKeyValueType {
@@ -492,7 +507,7 @@ Function Read-OZORegistryKeyValueType {
         .SYNOPSIS
         See description.
         .DESCRIPTION
-        Returns the type for an existing key value. Returns "Invalid path" if the path is not valid, "Not found" if the path does not exist, and "Could not read values" if the key values could not be read.
+        A simple function for returning the data _type_ from a single registry key value. Returns "Invalid path" if the path is not valid, "Not found" if the path does not exist, and "Could not read values" if the key values could not be read.
         .PARAMETER Key
         The registry key.
         .PARAMETER Value
@@ -512,7 +527,7 @@ Function Read-OZORegistryKeyValueType {
         [Parameter(Mandatory=$true,HelpMessage="The key value")][String]$Value
     )
     # Instantiate an OZORegistryKey object and return the value type
-    return ([OZORegistryKey]::new($Key)).GetKeyValueType($Value)
+    return ([OZORegistryKey]::new($Key,$false)).ReturnKeyValueType($Value)
 }
 
 Function Write-OZORegistryKeyValueData {
@@ -520,7 +535,7 @@ Function Write-OZORegistryKeyValueData {
         .SYNOPSIS
         See description.
         .DESCRIPTION
-        Writes data to a registry key value. If the key value does not exist, it will be created. If it does exist, it will be updated. Returns True on success and False on failure. Failures are typically due to inadequate permissions or data type mismatches.
+        A simple function for adding or updating a single registry key value. If the key value does not exist, it will be created. If it does exist, it will be updated. Returns True on success and False on failure. Failures are typically due to inadequate permissions or data type mismatches.
         .PARAMETER Key
         The registry key.
         .PARAMETER Value
@@ -534,7 +549,7 @@ Function Write-OZORegistryKeyValueData {
         .LINK
         https://github.com/onezeroone-dev/OZORegistry-PowerShell-Module/blob/main/Documentation/Write-OZORegistryKeyValueData.md
         .NOTES
-        Requires Administrator privileges. See the log for more details on failures. Information on logging is found in the README.md file for this module.
+        Requires Administrator privileges.
     #>
     # Parameters
     [CmdletBinding()] Param (
@@ -544,7 +559,7 @@ Function Write-OZORegistryKeyValueData {
         [Parameter(Mandatory=$false,HelpMessage="The data type")][ValidateSet("Binary","Dword","ExpandString","MultString","Qword","String")][String]$Type = "String"
     )
     # Instantiate an OZORegistryKey object and return the result of UpdateKeyValue
-    return ([OZORegistryKey]::new($Key)).UpdateKeyValue($Value,$Data)
+    return ([OZORegistryKey]::new($Key,$false)).UpdateKeyValue($Value,$Data)
 }
 
 Export-ModuleMember -Function Convert-OZORegistryString,Get-OZORegistryKey,Read-OZORegistryKeyValueData,Read-OZORegistryKeyValueType,Write-OZORegistryKeyValueData

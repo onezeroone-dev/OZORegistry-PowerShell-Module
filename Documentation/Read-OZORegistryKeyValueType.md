@@ -28,3 +28,6 @@ String
 Read-OZORegistryKeyValueType -Key "HLKM:\SOFTWARE\Microsoft\Windows\CurrentVersion" -Value "ProgramFilesDir"
 String
 ```
+
+## Logging
+Messages as written to the Windows Event Viewer [_One Zero One_](https://github.com/onezeroone-dev/OZOLogger-PowerShell-Module/blob/main/README.md) provider when available. Otherwise, messages are written to the _Microsoft-Windows-PowerShell_ provider under event ID 4100.

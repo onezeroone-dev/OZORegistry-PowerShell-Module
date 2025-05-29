@@ -1,7 +1,11 @@
 # OZORegistryKeyValue Class
-This class is part of the [OZORegistry PowerShell Module](../README.md). Calling the `Get-OZORegistryKey` function returns an object of this class.
+This class is part of the [OZORegistry PowerShell Module](../README.md).
 
-## Associations
+## Usage
+This class defined for internal use.
+
+## Definition
+### Associations
 ```
 + $Name:String = $null
 + $Type:String = $null
@@ -15,7 +19,7 @@ This class is part of the [OZORegistry PowerShell Module](../README.md). Calling
 + $Data:String[]
 + $Data:Int64
 ```
-## Operations
+### Operations
 ```
 + OZORegistryKeyValue($Value:String,$Data:Byte[]):Void
 + OZORegistryKeyValue($Value:String,$Data:Int32):Void

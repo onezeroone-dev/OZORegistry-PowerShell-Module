@@ -2,7 +2,7 @@
 This function is part of the [OZORegistry PowerShell Module](../README.md).
 
 ## Description
-A simple function for adding or updating a single registry key value.
+A simple function for adding or updating a single registry key value. If the key value does not exist, it will be created. If it does exist, it will be updated. Returns True on success and False on failure. Failures are typically due to inadequate permissions or data type mismatches.
 
 ## Syntax
 ```
@@ -23,8 +23,12 @@ Write-OZORegistryKeyValueData
 
 ## Examples
 ```powershell
-Write-OZORegistryKeyValueData
+Write-OZORegistryKeyValueData -Key "HKEY_LOCAL_MACHINE\SOFTWARE\One Zero One" -Value "Acronym" -Data "OZO" -Type "String"
+True
 ```
 
 ## Notes
 Requires Administrator privileges.
+
+## Logging
+Messages as written to the Windows Event Viewer [_One Zero One_](https://github.com/onezeroone-dev/OZOLogger-PowerShell-Module/blob/main/README.md) provider when available. Otherwise, messages are written to the _Microsoft-Windows-PowerShell_ provider under event ID 4100.
