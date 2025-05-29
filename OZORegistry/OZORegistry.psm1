@@ -520,7 +520,7 @@ Function Write-OZORegistryKeyValueData {
         .SYNOPSIS
         See description.
         .DESCRIPTION
-        Writes data to a registry key value. If the key value does not exist, it will be created. If it does exist, it will be updated. Returns True on success and False on failure.
+        Writes data to a registry key value. If the key value does not exist, it will be created. If it does exist, it will be updated. Returns True on success and False on failure. Failures are typically due to inadequate permissions or data type mismatches.
         .PARAMETER Key
         The registry key.
         .PARAMETER Value
@@ -534,32 +534,17 @@ Function Write-OZORegistryKeyValueData {
         .LINK
         https://github.com/onezeroone-dev/OZORegistry-PowerShell-Module/blob/main/Documentation/Write-OZORegistryKeyValueData.md
         .NOTES
-        Requires Administrator privileges. This function expectes registry keys in the "HKEY_LOCAL_MACHINE\..." format. If your path is in the "HKLM:\..." format, reformat it with Convert-OZORegistryPath.
+        Requires Administrator privileges. See the log for more details on failures. Information on logging is found in the README.md file for this module.
     #>
     # Parameters
     [CmdletBinding()] Param (
         [Parameter(Mandatory=$true,HelpMessage="The registry key")][String]$Key,
         [Parameter(Mandatory=$true,HelpMessage="The key value")][String]$Value,
-        [Parameter(Mandatory=$true,HelpMessage="The value data")][String]$Data,
-        [Parameter(Mandatory=$false,HelpMessage="The data type")][ValidateSet("Binary","Dword","ExpandString","MultString","None","Qword","String","Unknown")][String]$Type = "String"
+        [Parameter(Mandatory=$true,HelpMessage="The value data")]$Data,
+        [Parameter(Mandatory=$false,HelpMessage="The data type")][ValidateSet("Binary","Dword","ExpandString","MultString","Qword","String")][String]$Type = "String"
     )
-    # Determine if the operator is an administrator
-    If (Test-OZOLocalAdministrator -eq $true) {
-        # Operator is an Administrator; try to set the registry key value
-        Try {
-            [Microsoft.Win32.Registry]::SetValue($Key,$Value,$Data,[Microsoft.Win32.RegistryValueKind]::$Type)
-            # Success
-            return $true
-        } Catch {
-            # Failure
-            Write-OZOProvider -Message ("Error writing registry value data. Error message is: " + $_) -Level "Error"
-            return $false
-        }
-    } Else {
-        # Operator is not an Administrator
-        Write-OZOProvider -Message "The Write-OZORegistryValue function requires Administrator privileges." -Level "Error"
-        return $false
-    }
+    # Instantiate an OZORegistryKey object and return the result of UpdateKeyValue
+    return ([OZORegistryKey]::new($Key)).UpdateKeyValue($Value,$Data)
 }
 
 Export-ModuleMember -Function Convert-OZORegistryString,Get-OZORegistryKey,Read-OZORegistryKeyValueData,Read-OZORegistryKeyValueType,Write-OZORegistryKeyValueData

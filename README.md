@@ -39,5 +39,8 @@ Each registry key _value_ has a _data type_. This table details the relationship
 |Qword|Int64|64-bit unsigned integer|
 |String|String|String|
 
+## Logging
+Messages as written to the Windows Event Viewer [_One Zero One_](https://github.com/onezeroone-dev/OZOLogger-PowerShell-Module/blob/main/README.md) provider when available. Otherwise, messages are written to the _Microsoft-Windows-PowerShell_ provider under event ID 4100.
+
 ## Acknowledgements
 Special thanks to my employer, [Sonic Healthcare USA](https://sonichealthcareusa.com), who supports the growth of my PowerShell skillset and enables me to contribute portions of my work product to the PowerShell community.
