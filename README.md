@@ -16,13 +16,13 @@ This module provides functions and classes for interacting with the Microsoft Wi
 |Term|Definition|
 |----|----------|
 |Hive|The registry is composed of several _hives_ that each contain a hierarchy of keys. The image above shows the `HKEY_LOCAL_MACHINE` _hive_.|
-|Key|Each hive contains a hierarchy of _keys_ that may contain other keys, and may contain zero or more values. The image above shows the `One Zero One` _key_ in the `SOFTWARE` _key_ in the `HKEY_LOCAL_MACHINE` hive.|
-|Value|Each key contains zero or more unique _values_. The image above shows the `(default)` and `Acronym` _values_ in the `One Zero One` key.|
-|Data|Each values may be empty but will usually contain _data_. The image above shows `OZO` _data_ in the `Acronym` value.|
-|Type|Each value has a data _type_. Valid registry data types are `Binary`, `Dword`, `ExpandString`, `MultiString`, `Qword`, and `String`. The image above shows the `REG_SZ` _type_ (String) for the `Acronym` value.|
+|Key|Each hive contains a hierarchy of _keys_ that may contain other keys, and may contain zero or more _names_. The image above shows the `One Zero One` key in the `SOFTWARE` key in the `HKEY_LOCAL_MACHINE` hive.|
+|Name|Each key contains zero or more unique _names_. The image above shows the `(default)` and `Acronym` names in the `One Zero One` key.|
+|Value|Each name may be empty but will usually contain a _value_. The image above shows that the `Acronym` name contains the _value_ `OZO`.|
+|Type|Each name has a _type_. Valid registry types are `Binary`, `Dword`, `ExpandString`, `MultiString`, `Qword`, and `String`. The image above shows the `REG_SZ` _type_ (String) for the `Acronym` name.|
 
 ### Types in the Registry vs. PowerShell
-Each registry key _value_ has a _data type_. This table details the relationship between registry _data types_ and PowerShell _data types_ to help you align the data you are reading or writing in PowerShell with the corresponding registry data.
+Each registry key name has a type. This table details the relationship between registry name types and PowerShell data types to help you align the data you are reading or writing in PowerShell with the corresponding registry data.
 
 |Registry Type|Registry Display|PowerShell Type|Description|
 |-------------|----------------|---------------|-----------|
@@ -58,9 +58,9 @@ Import-Module OZORegistry
 
 ### Simple Functions
 - [Convert-OZORegistryPath](Documentation/Convert-OZORegistryPath.md) converts a registry string from one format to another.
-- [Read-OZORegistryKeyValueData](Documentation/Read-OZORegistryKeyValueData.md) is a simple function for returning the data from a single registry key value.
-- [Read-OZORegistryKeyValueType](Documentation/Read-OZORegistryKeyValueType.md) is a simple function for returning the data _type_ from a single registry key value.
-- [Write-OZORegistryKeyValueData](Documentation/Write-OZORegistryKeyValueData.md) is a simple function for adding or updating a single registry key value.
+- [Read-OZORegistryKeyNameValue](Documentation/Read-OZORegistryKeyNameValue.md) is a simple function for returning the value from a single registry key name.
+- [Read-OZORegistryKeyNameType](Documentation/Read-OZORegistryKeyNameType.md) is a simple function for returning the data _type_ from a single registry key name.
+- [Write-OZORegistryKeyNameValue](Documentation/Write-OZORegistryKeyNameValue.md) is a simple function for adding or updating the value for a single registry key name.
 
 ### Advanced Functions
 - [Get-OZORegistryKey](Documentation/Get-OZORegistryKey.md) returns an `OZORegistryKey` object that represents a registry key (whether existing or not). The resulting object contains methods for reading, adding, updating, and removing key values; and a method for processing (writing) the changes to the registry. This function (and resulting object) is the most robust and flexible use of this module.

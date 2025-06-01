@@ -2,7 +2,16 @@
 This class is part of the [OZORegistry PowerShell Module](../README.md).
 
 ## Usage
-Return an object of this class with [`Get-OZORegistryKey`](Get-OZORegistryKey.md).
+Return an object of this class with the [`Get-OZORegistryKey`](Get-OZORegistryKey.md) function.
+
+## Public Methods
+
+|Method|Inputs|Return Type|Description|
+|------|-----------|-----------|
+|SetDisplay|`Boolean`|Void|Determines whether or not console messages are displayed in a user-interactive session. Requires `$true` or `$false` and sets the `$Display` boolean accordingly.|
+|DisplayKeyValues|None|Void|Displays the contents of the `$Values` array that represents `$Key`. Only displays when `$Display` is `$true`. Use `SetDisplay()` to set `$Display`.|
+|ReturnKeyValueData|`String`|Returns the 
+
 
 ## Definition
 ### Associations
@@ -18,10 +27,11 @@ Return an object of this class with [`Get-OZORegistryKey`](Get-OZORegistryKey.md
 ```
 ### Operations
 ```
-+ OZORegistryKey($KeyPath:String):Void
++ OZORegistryKey($KeyPath:String,$Display:Boolean):Void
 - ValidateKeyPath($KeyPath:String):Boolean
 - ReadKey():Boolean
 - ReadKeyValues():Boolean
++ SetDisplay($DisplayBool:Boolean):Void
 + DisplayKeyValues():Void
 + ReturnKeyValueData($Name:String):Object
 + ReturnKeyValueType($Name:String):String

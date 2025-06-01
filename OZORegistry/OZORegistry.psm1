@@ -133,7 +133,18 @@ Class OZORegistryKey {
         # Return
         return $Return
     }
-    # METHODS: Display key values
+    # METHODS: Set display method
+    [Void] SetDisplay([Boolean]$DisplayBool) {
+        # Determine if SetValue is true
+        If ($DisplayBool -eq $true) {
+            # SetValue is true
+            $this.Display = $true
+        } Else {
+            # SetValue is false
+            $this.Display = $false
+        }
+    }
+    # METHODS: Display key values method
     [Void] DisplayKeyValues() {
         # Determine if session is user-interactive
         If ((Get-OZOUserInteractive) -eq $true -And $this.Display -eq $true) {
@@ -424,6 +435,9 @@ Function Convert-OZORegistryPath {
         .EXAMPLE
         Convert-OZORegistryPath -Path "HKCU:\SOFTWARE\Google\Chrome"
         HKEY_CURRENT_USER\SOFTWARE\Google\Chrome
+        .EXAMPLE
+        "HKEY_CURRENT_USER\SOFTWARE\Google\Chrome" | Convert-OZORegistryPath
+        HKCU:\SOFTWARE\Google\Chrome
         .LINK
         https://github.com/onezeroone-dev/OZORegistry-PowerShell-Module/blob/main/Documentation/Convert-OZORegistryPath.md
     #>
@@ -474,7 +488,7 @@ Function Get-OZORegistryKey {
     }
 }
 
-Function Read-OZORegistryKeyValueData {
+Function Read-OZORegistryKeyNameValue {
     <#
         .SYNOPSIS
         See description.
@@ -502,7 +516,7 @@ Function Read-OZORegistryKeyValueData {
     return ([OZORegistryKey]::new($Key,$false)).ReturnKeyValueData($Value)
 }
 
-Function Read-OZORegistryKeyValueType {
+Function Read-OZORegistryKeyNameType {
     <#
         .SYNOPSIS
         See description.
@@ -530,7 +544,7 @@ Function Read-OZORegistryKeyValueType {
     return ([OZORegistryKey]::new($Key,$false)).ReturnKeyValueType($Value)
 }
 
-Function Write-OZORegistryKeyValueData {
+Function Write-OZORegistryKeyNameValue {
     <#
         .SYNOPSIS
         See description.
@@ -562,4 +576,4 @@ Function Write-OZORegistryKeyValueData {
     return ([OZORegistryKey]::new($Key,$false)).UpdateKeyValue($Value,$Data)
 }
 
-Export-ModuleMember -Function Convert-OZORegistryString,Get-OZORegistryKey,Read-OZORegistryKeyValueData,Read-OZORegistryKeyValueType,Write-OZORegistryKeyValueData
+Export-ModuleMember -Function Convert-OZORegistryString,Get-OZORegistryKey,Read-OZORegistryKeyNameValue,Read-OZORegistryKeyNameType,Write-OZORegistryKeyNameValue

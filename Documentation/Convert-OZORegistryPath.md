@@ -26,3 +26,8 @@ HKCU:\SOFTWARE\Google\Chrome
 Convert-OZORegistryPath -Path "HKCU:\SOFTWARE\Google\Chrome"
 HKEY_CURRENT_USER\SOFTWARE\Google\Chrome
 ```
+### Example 3
+```powershell
+"HKEY_CURRENT_USER\SOFTWARE\Google\Chrome" | Convert-OZORegistryPath
+HKCU:\SOFTWARE\Google\Chrome
+```
