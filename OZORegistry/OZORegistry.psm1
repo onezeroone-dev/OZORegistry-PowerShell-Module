@@ -146,10 +146,32 @@ Class OZORegistryKey {
     }
     # METHODS: Display key method
     [Void] DisplayKey() {
+        # Control variable
+        [Boolean] $changesPending = $false
         # Determine if session is user-interactive
         If ((Get-OZOUserInteractive) -eq $true -And $this.Display -eq $true) {
-            # Session is user-interactive and Display is True
+            # Session is user-interactive and Display is True; determine if the counts do not match
+            If ($this.Key.ValueCount -ne $this.Names.Count) {
+                # Counts do not match; Names have been added or removed
+                $changesPending = $true
+            }
+            # Iterate through the key properties
+            ForEach ($Property in $this.Key.Property) {
+                # Determine if the Name is found in Names
+                If ($this.Names.Name -Contains $Property) {
+                    # Determine if the Key.Property value does not match the Name.Value
+                    If ($this.Key.GetValue($Property,$null,"DoNotExpandEnvironmentNames") -ne $this.ReturnKeyNameValue($Property)) {
+                        # Values do not match
+                        $changesPending = $true
+                    }
+                }
+            }
+            # Display the key representation
             $this.Names | Select-Object -Property Name,Type,Value | Format-Table | Out-Host
+            # Determine if any changes are pending
+            If ($changesPending -eq $true) {
+                "`r`nThere are pending changes. Use ProcessChanges() to apply these changes to the registry key." | Out-Host
+            }
         }
     }
     # METHODS: Return registry key name value method
@@ -368,9 +390,6 @@ Class OZORegistryKey {
                     
                 }
             }
-            # Perform the remove operation
-            # Perform the add operation
-            # Perform the update operation
             # Reread the key
             $this.ReadKey()
         } Else {
@@ -378,6 +397,8 @@ Class OZORegistryKey {
             $this.Logger.Write("Writing registry keys requires Administrator privileges.","Error")
             $Return = $false
         }
+        # Display the key for user-interactive sessions
+        $this.DisplayKey()
         # Return
         return $Return
     }
@@ -385,8 +406,8 @@ Class OZORegistryKey {
 
 Class OZORegistryKeyName {
     # PROPERTIES
-    [String] $Name = $null
-    [String] $Type = $null
+    [String]  $Name = $null
+    [String]  $Type = $null
     # METHODS: Constructor method [Binary]
     OZORegistryKeyName([String]$Name,[Byte[]]$Value) {
         # Set properties
