@@ -2,4 +2,4 @@
 
 |Date|Version|Comment|
 |----|-------|-------|
-|2025-May-24|1.0.0|Initial release including `Convert-OZORegistryString`,`Get-OZORegistryKey`,`Read-OZORegistryValue`,`Read-OZORegistryValueType`,and `Write-OZORegistryValue`.|
+|2025-Jun-01|1.0.0|Initial release including `Convert-OZORegistryString`,`Get-OZORegistryKey`,`Read-OZORegistryKeyNameValue`,`Read-OZORegistryKeyNameType`,and `Write-OZORegistryKeyNameValue`.|

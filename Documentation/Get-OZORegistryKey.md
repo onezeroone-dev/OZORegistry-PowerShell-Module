@@ -2,7 +2,7 @@
 This function is part of the [OZORegistry PowerShell Module](../README.md).
 
 ## Description
-Returns an `OZORegistryKey` object that represents a registry key (whether existing or not). The object contains methods for reading, adding, updating, and removing key values; and a method for processing (writing) the changes to the registry. This function (and resulting object) is the most robust and flexible use of this module.
+Returns an `OZORegistryKey` object. This object may represent a new or existing registry key. The object contains methods for [reading, adding, updating, and removing](OZORegistryKey.md#public-methods) key names; and methods for [displaying](OZORegistryKey.md#public-methods) the key and--once all desired changes have been staged--for [processing](OZORegistryKey.md#public-methods) the changes to the key. This function (and resulting object) provide the most robust and flexible use of this module.
 
 ## Syntax
 ```
@@ -14,7 +14,7 @@ Get-OZORegistryKey
 ## Parameters
 |Parameter|Description|
 |---------|-----------|
-|`Key`|The registry key.|
+|`Key`|The registry key in the short (`HKLM:\...`) or long (`HKEY_LOCAL_MACHINE\...`) format. Key may be new or existing.|
 |`Display`|Display console messages (effective only for user-interactive sessions).|
 
 ## Examples
@@ -25,7 +25,7 @@ $ozoRegistryKey = (Get-OZORegistryKey -Key "HKEY_LOCAL_MACHINE\SOFTWARE\Microsof
 Using key path Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion.
 Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion exists and all values read.
 
-Name                     Type         Data
+Name                     Type         Value
 ----                     ----         ----
 ProgramFilesDir          String       C:\Program Files
 CommonFilesDir           String       C:\Program Files\Common Files
@@ -49,10 +49,10 @@ Return an object representing a registry key **without** console messages, and s
 ```powershell
 $ozoRegistryKey = (Get-OZORegistryKey -Key "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion")
 $ozoRegistryKey.DisplayKeyValues()
-$ozoRegistryKey.Display = $true
+$ozoRegistryKey.SetDisplay($true)
 $ozoRegistryKey.DisplayKeyValues()
 
-Name                     Type         Data
+Name                     Type         Value
 ----                     ----         ----
 ProgramFilesDir          String       C:\Program Files
 CommonFilesDir           String       C:\Program Files\Common Files
@@ -66,13 +66,40 @@ ProgramW6432Dir          String       C:\Program Files
 ```
 
 ### Example 3
-Get the data and the type for the _ProgramFilesDir_ value.
+Get the value and the type for the _ProgramFilesDir_ name.
 ```powershell
 $ozoRegistryKey = (Get-OZORegistryKey -Key "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion")
-$ozoRegistryKey.ReturnKeyValueData("ProgramFilesDir")
+$ozoRegistryKey.ReturnKeyNameValue("ProgramFilesDir")
 C:\Program Files
-$ozoRegistryKey.ReturnKeyValueType("ProgramFilesDIr")
+$ozoRegistryKey.ReturnKeyNameType("ProgramFilesDIr")
 String
+```
+
+### Example 4
+Get add a new name to an existing registry key.
+```powershell
+$ozoRegistryKey = (Get-OZORegistryKey -Key "HKEY_LOCAL_MACHINE\SOFTWARE\One Zero One")
+If (($ozoRegistryKey.AddKeyName("Version","1.0.0")) -eq $true) {
+    $ozoRegistryKey.ProcessChanges()
+}
+```
+
+### Example 5
+Update an existing registry key name with a new value.
+```powershell
+$ozoRegistryKey = (Get-OZORegistryKey -Key "HKEY_LOCAL_MACHINE\SOFTWARE\One Zero One")
+If (($ozoRegistryKey.UpdateKeyName("Version","2.0.0")) -eq $true) {
+    $ozoRegistryKey.ProcessChanges()
+}
+```
+
+### Example 6
+Remove an existing name from a registry key
+```powershell
+$ozoRegistryKey = (Get-OZORegistryKey -Key "HKEY_LOCAL_MACHINE\SOFTWARE\One Zero One")
+If (($ozoRegistryKey.UpdateName("Version")) -eq $true) {
+    $ozoRegistryKey.ProcessChanges()
+}
 ```
 
 ## Logging

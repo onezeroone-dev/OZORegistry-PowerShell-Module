@@ -1,33 +1,36 @@
-# Read-OZORegistryKeyValueData
+# Read-OZORegistryKeyNameValue
 This function is part of the [OZORegistry PowerShell Module](../README.md).
 
 ## Description
-A simple function for returning the data from a single registry key value. Returns "Invalid path" if the path is not valid, "Not found" if the path does not exist, "Could not read values" if the key values could not be read, and "Unhandled data type" if the data cannot be returned.
+A simple function for returning the value for a single registry key name. Returns "Key path is not valid" if the path is not valid, "Key not found" if the path does not exist, "Could not read key names" if the key names could not be read, and "Unhandled data type" if the data cannot be returned.
 
 ## Syntax
 ```
-Read-OZORegistryKeyValueData
-    -Key   <String>
-    -Value <String>
+Read-OZORegistryKeyNameValue
+    -Key  <String>
+    -Name <String>
 ```
 
 ## Parameters
 |Parameter|Description|
 |---------|-----------|
 |`Key`|The registry key.|
-|`Value`|The key value.|
+|`Name`|The key name.|
 
 ## Examples
 ### Example 1
 ```powershell
-Read-OZORegistryKeyValueData -Key "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion" -Value "ProgramFilesDir"
+Read-OZORegistryKeyNameValue -Key "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion" -Name "ProgramFilesDir"
 C:\Program Files
 ```
 ### Example 2
 ```powershell
-Read-OZORegistryKeyValueData -Key "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion" -Value "ProgramFilesDir"
+Read-OZORegistryKeyNameValue -Key "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion" -Name "ProgramFilesDir"
 C:\Program Files
 ```
+
+## Outputs
+`Byte[]` | `Int32` | `Int64` | `String` | `String[]`
 
 ## Logging
 Messages as written to the Windows Event Viewer [_One Zero One_](https://github.com/onezeroone-dev/OZOLogger-PowerShell-Module/blob/main/README.md) provider when available. Otherwise, messages are written to the _Microsoft-Windows-PowerShell_ provider under event ID 4100.

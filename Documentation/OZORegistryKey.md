@@ -2,28 +2,40 @@
 This class is part of the [OZORegistry PowerShell Module](../README.md).
 
 ## Usage
-Return an object of this class with the [`Get-OZORegistryKey`](Get-OZORegistryKey.md) function.
+Use [`Get-OZORegistryKey`](Get-OZORegistryKey.md) function to return an object of this class.
+
+## Public Properties
+|Property|Type|Description|
+|--------|----|-----------|
+|`Display`|Boolean|Determines whether or not console messages are displayed during a user-interactive session. See `SetDisplay()`.|
+|`keyExists`|Boolean|True if the key Exists and otherwise False. This can be used to determine if the object represents an existing key (True) or a new key (False).|
+|`keyPathValid`|Boolean|True if the key format is valid and otherwise False. This limits whether a key can be read or written.|
+|`namesRead`|Boolean|True if the key exists and all values were successfully read.|
+|`keyPath`|String|The registry key path, parsed for use with PowerShell cmdlets.|
 
 ## Public Methods
-
-|Method|Inputs|Return Type|Description|
+|Method|Return Type|Description|
 |------|-----------|-----------|
-|SetDisplay|`Boolean`|Void|Determines whether or not console messages are displayed in a user-interactive session. Requires `$true` or `$false` and sets the `$Display` boolean accordingly.|
-|DisplayKeyValues|None|Void|Displays the contents of the `$Values` array that represents `$Key`. Only displays when `$Display` is `$true`. Use `SetDisplay()` to set `$Display`.|
-|ReturnKeyValueData|`String`|Returns the 
-
+|`SetDisplay([Boolean]$DisplayBool)`|Void|Sets the `$Display` property. Requires `$true` or `$false` and sets the `$Display` boolean accordingly.|
+|`DisplayKey()`|Void|Displays the contents of the `$Names` array that represents `$Key`. Only produces output when `$Display` is `$true` and the session is user-interactive. Use `SetDisplay()` to set `$Display`.|
+|`ReturnKeyNameValue([String]$Name,[String]$Value)`|`Byte[]`\|`Int32`\|`Int64`\|`String`\|`String[]`|Returns the value for a given name.|
+|`ReturnKeyNameType([String]$Name,[String]$Value)`|`String`|Returns the type for a given name.|
+|`AddKeyName([String]$Name,[Object]$Value)`|`Boolean`||
+|`RemoveKeyName([String]$Name)`|`Boolean`||
+|`UpdateKeyName([String]$Name,[Object]$Value)`||
+|`ProcessChanges()`|`Boolean`||
 
 ## Definition
 ### Associations
 ```
 + $Display:Boolean       = $false
 + $keyExists:Boolean     = $true
-+ $keyValid:Boolean      = $true
-+ $valuesRead:Boolean    = $true
++ $keyPathValid:Boolean  = $true
++ $namesRead:Boolean     = $true
 + $keyPath:String        = $null
-+ $Key:PSCustomObject    = $null
-+ $Logger:PSCustomObject = $null
-+ $Values:System.Collections.Generic.List[PSCustomObject] = @()
+- $Key:PSCustomObject    = $null
+- $Logger:PSCustomObject = $null
+- $Names:System.Collections.Generic.List[PSCustomObject] = @()
 ```
 ### Operations
 ```
@@ -32,11 +44,11 @@ Return an object of this class with the [`Get-OZORegistryKey`](Get-OZORegistryKe
 - ReadKey():Boolean
 - ReadKeyValues():Boolean
 + SetDisplay($DisplayBool:Boolean):Void
-+ DisplayKeyValues():Void
-+ ReturnKeyValueData($Name:String):Object
-+ ReturnKeyValueType($Name:String):String
-+ AddKeyValue($Value:String,$Data):Void
-+ RemoveKeyValue($Value:String):Void
-+ UpdateKeyValue($Value:String,$Data):Void
++ DisplayKey():Void
++ ReturnKeyNameValue($Name:String):Object
++ ReturnKeyNameType($Name:String):String
++ AddKeyName($Name:String,$Value):Void
++ RemoveKeyName($Name:String):Void
++ UpdateKeyName($Name:String,$Value):Void
 + ProcessChanges():Boolean
 ```

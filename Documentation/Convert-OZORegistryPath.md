@@ -2,7 +2,7 @@
 This function is part of the [OZORegistry PowerShell Module](../README.md).
 
 ## Description
-Converts a registry string from one format to another, e.g., _HKCU:\SOFTWARE\Google\Chrome_ to _HKEY_CURRENT_USER\SOFTWARE\Google\Chrome_. If the input string is invalid, it is returned unmodified.
+Converts a registry string from one format to another, e.g., _HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion_ to _HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion_. If the input string is invalid, it is returned unmodified.
 
 ## Syntax
 ```
@@ -18,16 +18,16 @@ Convert-OZORegistryPath
 ## Examples
 ### Example 1
 ```powershell
-Convert-OZORegistryPath -Path "HKEY_CURRENT_USER\SOFTWARE\Google\Chrome"
-HKCU:\SOFTWARE\Google\Chrome
+Convert-OZORegistryPath -Path "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion"
+HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion
 ```
 ### Example 2
 ```powershell
-Convert-OZORegistryPath -Path "HKCU:\SOFTWARE\Google\Chrome"
-HKEY_CURRENT_USER\SOFTWARE\Google\Chrome
+Convert-OZORegistryPath -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion"
+HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion
 ```
 ### Example 3
 ```powershell
-"HKEY_CURRENT_USER\SOFTWARE\Google\Chrome" | Convert-OZORegistryPath
-HKCU:\SOFTWARE\Google\Chrome
+"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion" | Convert-OZORegistryPath
+HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion
 ```
