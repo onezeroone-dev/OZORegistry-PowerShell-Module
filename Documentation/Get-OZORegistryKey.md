@@ -65,7 +65,7 @@ ProgramFilesPath         ExpandString %ProgramFiles%
 ProgramW6432Dir          String       C:\Program Files
 ```
 
-### Example 3
+### Example 4
 Get the value and the type for the _ProgramFilesDir_ name.
 ```powershell
 $ozoRegistryKey = (Get-OZORegistryKey -Key "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion")
@@ -75,7 +75,7 @@ $ozoRegistryKey.ReturnKeyNameType("ProgramFilesDIr")
 String
 ```
 
-### Example 4
+### Example 5
 Get add a new name to an existing registry key.
 ```powershell
 $ozoRegistryKey = (Get-OZORegistryKey -Key "HKEY_LOCAL_MACHINE\SOFTWARE\One Zero One")
@@ -84,7 +84,7 @@ If (($ozoRegistryKey.AddKeyName("Version","1.0.0")) -eq $true) {
 }
 ```
 
-### Example 5
+### Example 6
 Update an existing registry key name with a new value.
 ```powershell
 $ozoRegistryKey = (Get-OZORegistryKey -Key "HKEY_LOCAL_MACHINE\SOFTWARE\One Zero One")
@@ -93,7 +93,7 @@ If (($ozoRegistryKey.UpdateKeyName("Version","2.0.0")) -eq $true) {
 }
 ```
 
-### Example 6
+### Example 7
 Remove an existing name from a registry key
 ```powershell
 $ozoRegistryKey = (Get-OZORegistryKey -Key "HKEY_LOCAL_MACHINE\SOFTWARE\One Zero One")
